@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import User
-from jwt import (
-    JWT
-)
+from jwt import ( JWT)
 
 import random
 import string

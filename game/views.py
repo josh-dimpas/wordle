@@ -2,15 +2,15 @@ from django.apps import apps
 from django.db import connection
 from django.forms import ValidationError
 from django.http import HttpRequest, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from game.apps import GameConfig
+from game.middleware import AccountAccessMiddleware
 from game.models import Game
 from game.services import WordService
-from game.utils import generate_code, get_user
+from game.utils import generate_code
 
 config: GameConfig = apps.get_app_config('game')
-
-# TODO: Change to appropriate method after assessment
 
 # Create your views here.
 def index(request):
@@ -23,65 +23,41 @@ def index(request):
          }
     )
 
-def try_get_user(request: HttpRequest):
-    username = request.resolver_match.kwargs.get('username')
-
-    if not config.ENABLE_AUTH:
-        return 
-
-    if username is None:
-        raise ValueError("Username is required")
-
-    if username == config.ANON_USERNAME:
-        return None
-    
-    user = get_user(request)
-    if user is None:
-        raise ValidationError("Invalid JWT Token")
-
-    return user
-
-
-# NOTE: test game code: jnC5pG
+@csrf_exempt
+@AccountAccessMiddleware(match_username=True)
 def play(request, username: str):
-    # TODO: Use middleware for authentication
-    try :
-        try_get_user(request)
-    except BaseException as e:
-        return JsonResponse({ "error": e }, status = 401)
 
     game = Game.objects.create(
         code = generate_code(),
         word = WordService.get_random_word(),
         player = username
     )
+
     return JsonResponse({ 'game_code': game.code })
 
+@csrf_exempt
+@AccountAccessMiddleware(match_username=True)
 def view_game(request, username: str, game_code: str):
-    # TODO: Use middleware for authentication
-    try :
-        try_get_user(request)
-    except BaseException as e:
-        return JsonResponse({ "error": e }, status = 401)
-
     game = Game.objects.filter(code=game_code).first()
 
     if game is None:
         return JsonResponse({ "error": "Game code does not exist" }, status=404)
 
+    if game.player != username:
+        return JsonResponse({ "error": f"{username} do not have a game with code: {game_code}"})
+
     return JsonResponse(game.to_json())
         
-
+@csrf_exempt
+@AccountAccessMiddleware(match_username=True)
 def guess(request, username: str, game_code: str, input: str):
-    try :
-        try_get_user(request)
-    except ValidationError as e:
-        return JsonResponse({ "error": e.message }, status = 401)
-
     game = Game.objects.filter(code=game_code).first()
 
     if game is None:
         return JsonResponse({ "error": "Game code does not exist"}, status=404)
+
+    if game.player != username:
+        return JsonResponse({ "error": f"{username} do not have a game with code: {game_code}"})
 
     # Return an error if guess length is not equal with word length
     if len(input) != len(game.word):
@@ -91,7 +67,7 @@ def guess(request, username: str, game_code: str, input: str):
     if game.is_win:
         return JsonResponse({ "message": f"Game has already won. Word is {game.word}."})
     
-    if game.get_is_active():
+    if game.get_is_finished():
         return JsonResponse({ "message": f"You ran out of tries. Word is {game.word}."})
 
     game.guess(input)
@@ -105,9 +81,9 @@ def guess(request, username: str, game_code: str, input: str):
 
     return JsonResponse(game.to_json())
 
+@csrf_exempt
+@AccountAccessMiddleware(match_username=False)
 def account_stats(request: HttpRequest, username: str):
-# TODO: Change to appropriate method after assessment (to get proper search parameter)
-
     offset = int(request.GET.get('offset', '0'))
     limit = int(request.GET.get('limit', '10'))
     order = request.GET.get('order', 'desc') 
@@ -117,8 +93,6 @@ def account_stats(request: HttpRequest, username: str):
     try :
         if username == config.ANON_USERNAME:
             return JsonResponse({ "message": "No stats for anon"})
-
-        try_get_user(request)
 
         # Get all games with that player
         games = Game.objects.filter(player=username).order_by(f'{'-' if is_descending else ''}created_at')[offset : offset + limit]
@@ -142,6 +116,7 @@ def account_stats(request: HttpRequest, username: str):
     except BaseException as e:
         return JsonResponse({ "error": e }, status = 401)
 
+@csrf_exempt
 def leaderboards(request: HttpRequest):
     offset = int(request.GET.get('offset', '0'))
     limit = int(request.GET.get('limit', '10'))
@@ -174,6 +149,3 @@ def leaderboards(request: HttpRequest):
 
         print(players)
         return JsonResponse(players, safe=False)
-        
-
-    

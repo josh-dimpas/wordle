@@ -25,6 +25,9 @@ SECRET_KEY = 'django-insecure-#s^h_km7r*9_t(=y_hcq0-k30lzwpjr3!)m$it2unpws#1c&)7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Remove append slash cause annoying
+APPEND_SLASH=False
+
 ALLOWED_HOSTS = []
 
 
@@ -32,6 +35,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'game.apps.GameConfig',
+    'users.apps.UsersConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

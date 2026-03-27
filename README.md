@@ -63,7 +63,7 @@ A wordle game
 
 ### Get leaderboard
 
-#### $\color{Green}{\textsf{GET}}$ `/leaderboard`
+#### $\color{Green}{\textsf{GET}}$ `/leaderboards`
 
 ###### Search Parameters
 
@@ -83,9 +83,18 @@ A wordle game
 }[]
 ```
 
+## Authorized Routes
+
+> [!Tip]
+> You can use `anon` for `<str:username>` path variable if you want to avoid passing jwt token on the auth headers
+
 ### Start a game
 
 #### $\color{Orange}{\textsf{POST}}$ `/<str:username>/play`
+
+###### Request Headers
+
+`Authorization` - contains the `jwt` token to be used for authentication
 
 ###### No Request Body Needed
 
@@ -101,6 +110,10 @@ A wordle game
 
 #### $\color{Green}{\textsf{GET}}$ `/<str:username>/<str:game_code>`
 
+###### Request Headers
+
+`Authorization` - contains the `jwt` token to be used for authentication
+
 ###### Response Body
 
 ```ts
@@ -114,12 +127,16 @@ A wordle game
 
 \*`tries` - a list of strings where each characters could be followed by:
 
-- `/` - the character is within the word and is in the correct position
-- `+` - The character is within the word but is not in the correct position
+- `/` - the character before is within the word and is in the correct position
+- `+` - The character before is within the word but is not in the correct position
 
 ### Guess a word
 
 #### $\color{Orange}{\textsf{POST}}$ `/<str:username>/<str:game_code>/<str:input>`
+
+###### Request Headers
+
+`Authorization` - contains the `jwt` token to be used for authentication
 
 ###### Response Body
 
@@ -132,9 +149,13 @@ A wordle game
 } | { error: string }
 ```
 
-### Get accounts state
+### Get account state
 
 #### $\color{Green}{\textsf{GET}}$ `/<str:username>`
+
+###### Request Headers
+
+`Authorization` - contains the `jwt` token to be used for authentication
 
 ###### Search Parameters
 

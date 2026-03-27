@@ -21,12 +21,13 @@ class Game(models.Model):
         # Loop through the tries, print each character with 1 extra char
         return [self.assess_guess(t) for t in self.tries]
     
-    def get_is_active(self) -> bool:
+    def get_is_finished(self) -> bool:
         tries_left = self.get_tries_left()
         return tries_left == 0 or self.is_win
 
     def guess(self, input: str):
         self.tries.append(input)
+
         if input == self.word:
             self.is_win = True
 
@@ -53,7 +54,7 @@ class Game(models.Model):
             "tries": self.get_tries(),
             "word_length": len(self.word),
             "created_at": self.created_at.__str__(),
-            **({ "word": self.word } if self.get_is_active() else {})
+            **({ "word": self.word } if self.get_is_finished() else {})
         }
 
     def __str__(self):
