@@ -25,10 +25,9 @@ class AccountAccessMiddleware:
             if auth_header is None:
                 return JsonResponse({ "error": "Missing JWT Token"}, status=401)
 
+
             token = auth_header[7:]
-
             username, expired = decode_jwt(token)
-
 
             if self.match_username and path_username != username:
                 return JsonResponse({ "error": "JWT and path username mismatch"}, status=401)

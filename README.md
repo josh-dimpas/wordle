@@ -55,7 +55,7 @@ A wordle game
 ```ts
 {
     jwt: string,
-    expires: number
+    expires_in: number
 } | {
     error: string
 }
@@ -70,7 +70,7 @@ A wordle game
 | Name   | Data type       | Description                                                  | Default Value          |
 | ------ | --------------- | ------------------------------------------------------------ | ---------------------- |
 | offset | number          | Determine the offset of the returned list of users           | 0                      |
-| limit  | number          | Determine the amount of users returned. <br> Min: 1, Max: 10 | 10                     |
+| limit  | number          | Determine the amount of users returned. <br> Min: 1, Max: 50 | 10                     |
 | order  | "asc" \| "desc" | Determine the order by games won direction                   | "desc" (highest first) |
 
 ###### Response Schema

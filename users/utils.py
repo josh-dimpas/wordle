@@ -18,9 +18,10 @@ def decode_jwt(
     username = payload['username']
     expires = payload['expires']
 
-    print(expires, username)
+    # Check if expires iso date is before 'now'
+    parsed_date = datetime.fromisoformat(expires)
 
-    return username, False
+    return username, parsed_date < datetime.now()
 
 def encode_jwt(
     username: str, 

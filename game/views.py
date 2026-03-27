@@ -12,6 +12,8 @@ from game.utils import generate_code
 
 config: GameConfig = apps.get_app_config('game')
 
+# TODO: change to class based views for properly handling POST methods
+
 # Create your views here.
 def index(request):
     return JsonResponse(
@@ -119,7 +121,7 @@ def account_stats(request: HttpRequest, username: str):
 @csrf_exempt
 def leaderboards(request: HttpRequest):
     offset = int(request.GET.get('offset', '0'))
-    limit = int(request.GET.get('limit', '10'))
+    limit = max(1, min(50, int(request.GET.get('limit', '10'))))
     order = request.GET.get('order', 'desc') 
 
     is_descending = order == 'desc'
