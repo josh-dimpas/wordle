@@ -10,14 +10,16 @@ from game.utils import generate_code, get_user
 
 config: GameConfig = apps.get_app_config('game')
 
+# TODO: Change to appropriate method after assessment
+
 # Create your views here.
 def index(request):
     return JsonResponse(
         { 
-         "message": "Welcome to wordle API.\n"
-         "Login with your account at /login\n"
-         "Don't have an account yet? try /register.\n"
-         f"Start a game immediately now with /{config.ANON_USERNAME}"
+         "message": "Welcome to wordle API."
+         " Login your account with /login"
+         " Don't have an account yet? try /register."
+         f" Start a game immediately now with /{config.ANON_USERNAME}/play"
          }
     )
 
@@ -103,16 +105,23 @@ def guess(request, username: str, game_code: str, input: str):
 
     return JsonResponse(game.to_json())
 
-# TODO: Add search parameters for games list pagination
-def account_stats(request, username: str):
+def account_stats(request: HttpRequest, username: str):
+# TODO: Change to appropriate method after assessment (to get proper search parameter)
+
+    offset = int(request.GET.get('offset', '0'))
+    limit = int(request.GET.get('limit', '10'))
+    order = request.GET.get('order', 'desc') 
+
+    is_descending =  order == 'desc' 
+
     try :
-        if username is config.ANON_USERNAME:
+        if username == config.ANON_USERNAME:
             return JsonResponse({ "message": "No stats for anon"})
 
         try_get_user(request)
 
         # Get all games with that player
-        games = Game.objects.filter(player=username)
+        games = Game.objects.filter(player=username).order_by(f'{'-' if is_descending else ''}created_at')[offset : offset + limit]
         won_games = [obj for obj in games if obj.is_win]
 
         return JsonResponse({
@@ -133,7 +142,13 @@ def account_stats(request, username: str):
     except BaseException as e:
         return JsonResponse({ "error": e }, status = 401)
 
-def leaderboards(request):
+def leaderboards(request: HttpRequest):
+    offset = int(request.GET.get('offset', '0'))
+    limit = int(request.GET.get('limit', '10'))
+    order = request.GET.get('order', 'desc') 
+
+    is_descending = order == 'desc'
+
     # Get all games grouped by players
     query = f"""
     SELECT
@@ -143,7 +158,9 @@ def leaderboards(request):
     FROM game_game AS g
     WHERE g.player != '{config.ANON_USERNAME}'
     GROUP BY g.player
-    ORDER BY games_won DESC
+    ORDER BY games_won {'DESC' if is_descending else 'ASC'}
+    LIMIT {limit}
+    {'' if offset == 0 else f"OFFSET {offset}"}
     """
 
     with connection.cursor() as cursor:
