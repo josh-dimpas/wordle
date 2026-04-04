@@ -46,10 +46,9 @@ class LoginViewClass(View):
             jwt_encoded = encode_jwt(username)
         
             return JsonResponse({ "token": jwt_encoded, "expires_in": config.JWT_LIFETIME })
-
         except json.JSONDecodeError as  e:
             print(e)
-            return JsonResponse({ "error": "Invalid credentials"}, status=500)
+            return JsonResponse({ "error": "Invalid JSON"}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterViewClass(View):
@@ -64,7 +63,7 @@ class RegisterViewClass(View):
             is_used_username = User.objects.filter(username=username).exists()
 
             if is_used_username:
-                return JsonResponse({ "error": "Username is already used. Please choose something else" }, status=403)
+                return JsonResponse({ "error": "Username is already used. Please choose something else" }, status=409)
 
             # Create a user object using django built in 
             user = User.objects.create_user(username, 'no-email', password)
