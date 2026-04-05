@@ -1,11 +1,8 @@
 
 from functools import wraps
-from django.apps import apps
 from django.http import HttpRequest, JsonResponse
-from game.apps import GameConfig
 from users.utils import decode_jwt
-
-config: GameConfig = apps.get_app_config('game')
+from .apps import config
 
 class AccountAccessMiddleware:
     def __init__(self, match_username: bool = False):

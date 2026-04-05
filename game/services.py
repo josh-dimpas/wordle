@@ -1,11 +1,9 @@
 import random
 from typing import Final, List
-from django.apps import apps
 import requests
 
-from game.apps import GameConfig
+from .apps import config
 
-config: GameConfig = apps.get_app_config('game')
 API_URL: Final = "https://random-word-api.herokuapp.com/word"
 
 class WordService:

@@ -2,19 +2,14 @@ import json
 
 from django.views import View
 
-# ? Should create a subclass right? for long term
-from django.apps import apps
 from django.http import HttpRequest, JsonResponse
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
-
-from users.apps import UsersConfig
-from users.models import Account
-from users.utils import decode_jwt, encode_jwt
-
-config: UsersConfig = apps.get_app_config('users')
+from .apps import config
+from .models import Account
+from .utils import decode_jwt, encode_jwt
 
 # Create your views here.
 @method_decorator(csrf_exempt, name='dispatch')

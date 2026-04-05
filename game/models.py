@@ -1,11 +1,8 @@
 from django.utils import timezone
 from typing import List
 from django.db import models
-from django.apps import apps
 
-from game.apps import GameConfig
-
-config: GameConfig = apps.get_app_config('game')
+from game.apps import config
 
 class Game(models.Model):
     code = models.CharField(max_length=config.GAME_CODE_LENGTH, default='')
