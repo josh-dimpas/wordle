@@ -7,9 +7,8 @@ from django.http import HttpRequest, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
-from .apps import config
 from .models import Account
-from .utils import decode_jwt, encode_jwt
+from .utils import decode_jwt, encode_jwt, config
 
 # Create your views here.
 @method_decorator(csrf_exempt, name='dispatch')

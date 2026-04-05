@@ -2,7 +2,7 @@ import random
 from typing import Final, List
 import requests
 
-from .apps import config
+from .utils import config
 
 API_URL: Final = "https://random-word-api.herokuapp.com/word"
 

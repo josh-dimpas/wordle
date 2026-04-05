@@ -2,7 +2,7 @@ from django.utils import timezone
 from typing import List
 from django.db import models
 
-from game.apps import config
+from .utils import config
 
 class Game(models.Model):
     code = models.CharField(max_length=config.GAME_CODE_LENGTH, default='')

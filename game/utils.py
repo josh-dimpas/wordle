@@ -6,9 +6,10 @@ import random
 import string
 
 from django.http import HttpRequest
-from game.models import Game, config
+from game.apps import GameConfig
+from users.models import Account
 
-jwt = JWT()
+config: GameConfig = apps.get_app_config('game')
 
 def generate_code():
     characters = string.ascii_letters + string.digits

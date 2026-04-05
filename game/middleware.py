@@ -2,7 +2,7 @@
 from functools import wraps
 from django.http import HttpRequest, JsonResponse
 from users.utils import decode_jwt
-from .apps import config
+from .utils import config
 
 class AccountAccessMiddleware:
     def __init__(self, match_username: bool = False):

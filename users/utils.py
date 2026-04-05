@@ -2,7 +2,9 @@ from django.apps import apps
 from jwt import ( JWT, supported_key_types )
 
 from datetime import datetime, timedelta
-from users.apps import UsersConfig
+
+from django.apps import apps
+from .apps import UsersConfig
 
 jwt = JWT()
 config: UsersConfig = apps.get_app_config('users')

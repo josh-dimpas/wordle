@@ -1,4 +1,4 @@
-from django.apps import AppConfig, apps
+from django.apps import AppConfig
 from typing import Final
 
 import os
@@ -15,5 +15,3 @@ class GameConfig(AppConfig):
     WORD_CORRECT_PARTIAL_IDENTIFIER: Final = os.getenv('WORD_CHAR_PARTIAL_IDENTIFIER', '+')
 
     ANON_USERNAME: Final = os.getenv('ANON_USERNAME', 'anon')
-
-config: GameConfig = apps.get_app_config('game')
