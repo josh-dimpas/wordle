@@ -4,6 +4,7 @@ from .models import Game
 
 class GameSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
+    player = serializers.CharField(source="player.username", read_only=True)
     tries_left = serializers.SerializerMethodField()
     tries = serializers.SerializerMethodField()
     word_length = serializers.SerializerMethodField()

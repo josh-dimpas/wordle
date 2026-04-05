@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser
 class Account(AbstractUser):
     # Test
     wins = models.IntegerField(default=0) # For faster querying + wins are stored even if games are deleted
+    matches_count = models.IntegerField(default=0) # ^
 
     class Meta:
         verbose_name = 'account'

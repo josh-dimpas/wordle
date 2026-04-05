@@ -3,11 +3,12 @@ from typing import List
 from django.db import models
 
 from .utils import config
+from users.models import Account
 
 
 class Game(models.Model):
     is_win = models.BooleanField(default=False)
-    player = models.CharField()
+    player = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="games")
     word = models.CharField(max_length=config.WORD_MAX_LENGTH)
     tries = models.JSONField(default=list)
     max_tries = models.IntegerField(default=config.GAME_MAX_TRIES)

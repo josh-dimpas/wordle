@@ -9,6 +9,7 @@ from .serializers import (
     GameCreateSerializer,
     GameSerializer,
     GameSummarySerializer,
+    LeaderboardSerializer,
 )
 from .services import WordService
 
@@ -32,11 +33,9 @@ class PlayView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        username = request.user.username
-
         game = Game.objects.create(
             word=WordService.get_random_word(),
-            player=username,
+            player=request.user,
         )
 
         serializer = GameCreateSerializer(game)
@@ -47,18 +46,11 @@ class ViewGameView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, game_id):
-        username = request.user.username
-        game = Game.objects.filter(id=game_id).first()
+        game = Game.objects.filter(id=game_id, player=request.user).first()
 
         if game is None:
             return Response(
                 {"error": "Game does not exist"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        if game.player != username:
-            return Response(
-                {"error": f"{username} does not own this game"},
-                status=status.HTTP_403_FORBIDDEN,
             )
 
         serializer = GameSerializer(game)
@@ -69,18 +61,11 @@ class GuessView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, game_id: str, input: str):
-        username = request.user.username
-        game = Game.objects.filter(id=game_id).first()
+        game = Game.objects.filter(id=game_id, player=request.user).first()
 
         if game is None:
             return Response(
                 {"error": "Game does not exist"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        if game.player != username:
-            return Response(
-                {"error": f"{username} does not own this game"},
-                status=status.HTTP_403_FORBIDDEN,
             )
 
         if len(input) != len(game.word):
@@ -115,14 +100,12 @@ class AccountStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        username = request.user.username
-
         offset = int(request.query_params.get("offset", "0"))
         limit = int(request.query_params.get("limit", "10"))
         order = request.query_params.get("order", "desc")
         is_descending = order == "desc"
 
-        games = Game.objects.filter(player=username).order_by(
+        games = Game.objects.filter(player=request.user).order_by(
             "-created_at" if is_descending else "created_at"
         )[offset : offset + limit]
 
@@ -149,7 +132,7 @@ class LeaderboardsView(APIView):
         is_descending = order == "desc"
 
         players = (
-            Game.objects.values("player")
+            Game.objects.values("player__username")
             .annotate(
                 games_won=Count("id", filter=Q(is_win=True)),
                 games_played=Count("id"),
