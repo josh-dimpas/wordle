@@ -39,8 +39,8 @@ class GuessSerializer(serializers.Serializer):
 
 
 class AccountStatsSerializer(serializers.Serializer):
-    games_played = serializers.IntegerField()
-    games_won = serializers.IntegerField()
+    matches_played = serializers.IntegerField()
+    matches_won = serializers.IntegerField()
     games = serializers.ListField()
 
 
@@ -55,6 +55,6 @@ class GameSummarySerializer(serializers.Serializer):
 
 
 class LeaderboardSerializer(serializers.Serializer):
-    username = serializers.CharField(source="player__username")
-    games_won = serializers.IntegerField()
-    games_played = serializers.IntegerField()
+    username = serializers.CharField()
+    wins = serializers.IntegerField()
+    matches_count = serializers.IntegerField()

@@ -1,4 +1,3 @@
-from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -6,6 +5,7 @@ from rest_framework.views import APIView
 
 from .models import Game
 from .serializers import (
+    AccountStatsSerializer,
     GameCreateSerializer,
     GameSerializer,
     GameSummarySerializer,
@@ -109,14 +109,12 @@ class AccountStatsView(APIView):
             "-created_at" if is_descending else "created_at"
         )[offset : offset + limit]
 
-        won_games = [obj for obj in games if obj.is_win]
-
         games_data = GameSummarySerializer(games, many=True).data
 
         return Response(
             {
-                "games_played": len(games),
-                "games_won": len(won_games),
+                "matches_played": request.user.matches_count,
+                "matches_won": request.user.wins,
                 "games": games_data,
             }
         )
@@ -126,20 +124,17 @@ class LeaderboardsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from users.models import Account
+
         offset = int(request.query_params.get("offset", "0"))
         limit = max(1, min(50, int(request.query_params.get("limit", "10"))))
         order = request.query_params.get("order", "desc")
         is_descending = order == "desc"
 
         players = (
-            Game.objects.values("player__username")
-            .annotate(
-                games_won=Count("id", filter=Q(is_win=True)),
-                games_played=Count("id"),
-            )
-            .order_by("-games_won" if is_descending else "games_won")[
-                offset : offset + limit
-            ]
+            Account.objects.filter(matches_count__gt=0)
+            .values("username", "wins", "matches_count")
+            .order_by("-wins" if is_descending else "wins")[offset : offset + limit]
         )
 
         serializer = LeaderboardSerializer(players, many=True)
