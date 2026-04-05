@@ -20,13 +20,16 @@ runws:
     uv run daphne -b 0.0.0.0 8000 wordle.asgi:application
 
 # Run all tests
-# -> Delete db.sqlite3 (used for testing env)
-# -> Migrate using test settings
-# -> Run Test
 test:
-    rm -f db.sqlite3
-    uv run python manage.py migrate --setings=wordle.settings_test
-    uv run pytest --ds=wordle.settings_test
+    uv run python manage.py test
+
+# Run tests for specific app
+test-app app:
+    uv run python manage.py test {{app}}
+
+# Run tests with verbose
+test-app-verbose app:
+    uv run python manage.py test {{app}} --verbosity=2
 
 lint:
     uv run ruff check .
