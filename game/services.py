@@ -5,6 +5,8 @@ import requests
 from .utils import config
 
 API_URL: Final = "https://random-word-api.herokuapp.com/word"
+REQUEST_TIMEOUT: Final = 30
+
 
 class WordService:
     FALLBACK_WORDS = [
@@ -16,9 +18,8 @@ class WordService:
         min_length = config.WORD_MIN_LENGTH
         max_length = config.WORD_MAX_LENGTH
         length = random.randint(min_length, max_length)
-        
-        # Do not catch the error as get_random_word will handle that
-        response = requests.get(f"{API_URL}?length={length}")
+
+        response = requests.get(f"{API_URL}?length={length}", timeout=REQUEST_TIMEOUT)
 
         if response.status_code == 200:
             data : List[str] = response.json()
@@ -31,9 +32,10 @@ class WordService:
         min_length = config.WORD_MIN_LENGTH
         max_length = config.WORD_MAX_LENGTH
         length = random.randint(min_length, max_length)
-        
-        # Do not catch the error as get_random_word will handle that
-        response = requests.get(f"{API_URL}?length={length}&number={amount}")
+
+        response = requests.get(
+            f"{API_URL}?length={length}&number={amount}", timeout=REQUEST_TIMEOUT
+        )
 
         if response.status_code == 200:
             data : List[str] = response.json()
@@ -46,6 +48,9 @@ class WordService:
         # Try requesting on api
         try:
             return cls.fetch_word()
+        except requests.exceptions.Timeout:
+            print(f"Timeout fetching word, using fallback")
+            return random.choice(cls.FALLBACK_WORDS)
         except BaseException as e:
             print(f"Error on fetching words: {e}")
             return random.choice(cls.FALLBACK_WORDS)
@@ -55,6 +60,9 @@ class WordService:
         # Try requesting on api
         try:
             return cls.fetch_words(amount=amount)
+        except requests.exceptions.Timeout:
+            print(f"Timeout fetching words, using fallback")
+            return random.choices(cls.FALLBACK_WORDS, k=amount)
         except BaseException as e:
             print(f"Error on fetching words: {e}")
             return random.choices(cls.FALLBACK_WORDS, k=amount)
