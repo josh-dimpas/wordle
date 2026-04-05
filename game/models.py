@@ -5,7 +5,6 @@ from django.db import models
 from .utils import config
 
 class Game(models.Model):
-    code = models.CharField(max_length=config.GAME_CODE_LENGTH, default='')
     is_win = models.BooleanField(default=False)
     player = models.CharField(default=config.ANON_USERNAME)
     word = models.CharField(max_length=config.WORD_MAX_LENGTH)
