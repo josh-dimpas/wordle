@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import Account
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterViewClass(View):
     def post(self, request: HttpRequest):
