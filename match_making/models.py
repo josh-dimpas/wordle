@@ -6,6 +6,7 @@ from users.models import Account
 
 config = apps.get_app_config("game")
 
+
 class Lobby(models.Model):
     code = models.CharField(max_length=9, unique=True)
     owner = models.ForeignKey(
@@ -64,6 +65,14 @@ class Match(models.Model):
         Lobby, on_delete=models.CASCADE, related_name="matches", null=True, blank=True
     )
     players = models.ManyToManyField(Account, related_name="matches")
+    lives_per_player = models.IntegerField(default=config.MULTIPLAYER_LIVES)
+    winner = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="won_matches",
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField("Created At", default=timezone.now)
 
