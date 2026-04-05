@@ -147,6 +147,7 @@ class LobbyReadyView(APIView):
 class LobbyStartView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         lobby = Lobby.objects.filter(players=request.user).first()
 
