@@ -142,4 +142,5 @@ class LeaderboardsView(APIView):
             ]
         )
 
-        return Response(players)
+        serializer = LeaderboardSerializer(players, many=True)
+        return Response(serializer.data)

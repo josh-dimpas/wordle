@@ -52,3 +52,9 @@ class GameSummarySerializer(serializers.Serializer):
 
     def get_tries_left(self, obj):
         return obj.get_tries_left()
+
+
+class LeaderboardSerializer(serializers.Serializer):
+    username = serializers.CharField(source="player__username")
+    games_won = serializers.IntegerField()
+    games_played = serializers.IntegerField()
