@@ -67,10 +67,18 @@ class MatchPlayerSerializer(serializers.ModelSerializer):
 
 class MatchSerializer(serializers.ModelSerializer):
     players = serializers.SerializerMethodField()
+    winner = serializers.CharField(
+        source="winner.username", read_only=True, allow_null=True
+    )
 
     class Meta:
         model = Match
-        fields = ["id", "players", "status", "created_at"]
+        fields = ["id", "players", "status", "winner", "lives_per_player", "created_at"]
 
     def get_players(self, obj):
-        return [player.username for player in obj.players.all()]
+        match_players = obj.match_players.select_related("player").all()
+        return MatchPlayerSerializer(match_players, many=True).data
+
+
+class MatchGuessSerializer(serializers.Serializer):
+    input = serializers.CharField(max_length=50)
