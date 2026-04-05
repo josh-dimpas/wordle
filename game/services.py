@@ -27,6 +27,21 @@ class WordService:
             raise Exception(f"Random word fetch failed: [{response.status_code}]")
 
     @classmethod
+    def fetch_words(cls, amount: int) -> List[str]:
+        min_length = config.WORD_MIN_LENGTH
+        max_length = config.WORD_MAX_LENGTH
+        length = random.randint(min_length, max_length)
+        
+        # Do not catch the error as get_random_word will handle that
+        response = requests.get(f"{API_URL}?length={length}&number={amount}")
+
+        if response.status_code == 200:
+            data : List[str] = response.json()
+            return data
+        else:
+            raise Exception(f"Random word fetch failed: [{response.status_code}]")
+
+    @classmethod
     def get_random_word(cls) -> str:
         # Try requesting on api
         try:
@@ -34,3 +49,12 @@ class WordService:
         except BaseException as e:
             print(f"Error on fetching words: {e}")
             return random.choice(cls.FALLBACK_WORDS)
+
+    @classmethod
+    def get_random_words(cls, amount: int) -> List[str]:
+        # Try requesting on api
+        try:
+            return cls.fetch_words(amount=amount)
+        except BaseException as e:
+            print(f"Error on fetching words: {e}")
+            return random.choices(cls.FALLBACK_WORDS, k=amount)
