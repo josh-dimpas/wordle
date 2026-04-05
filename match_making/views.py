@@ -239,3 +239,179 @@ class MatchStateView(APIView):
 
         serializer = MatchSerializer(match)
         return Response(serializer.data)
+
+
+class MatchGuessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, match_id):
+        serializer = MatchGuessSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        input_word = serializer.validated_data["input"]
+
+        match = Match.objects.filter(id=match_id).first()
+
+        if match is None:
+            return Response(
+                {"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if match.status != "active":
+            return Response(
+                {"error": "Match is not active"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not match.players.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not in this match"}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        match_player = MatchPlayer.objects.filter(
+            match=match, player=request.user
+        ).first()
+        if not match_player:
+            return Response(
+                {"error": "Player not found in match"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        active_game = MatchGame.objects.filter(
+            match=match,
+            player=request.user,
+            word_index=match_player.current_word_index,
+            is_active=True,
+        ).first()
+
+        if not active_game:
+            return Response(
+                {"error": "No active game found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        game = Game.objects.filter(id=active_game.game_id).first()
+        if not game:
+            return Response(
+                {"error": "Game not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if game.get_is_finished():
+            return Response(
+                {"error": "Game already finished"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(input_word) != len(game.word):
+            return Response(
+                {
+                    "error": f"Please provide a word with matching length. You sent {len(input_word)}, required is {len(game.word)}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        game.guess(input_word)
+
+        if game.word == input_word:
+            active_game.is_active = False
+            active_game.save()
+
+            opponents = MatchPlayer.objects.filter(match=match).exclude(
+                player=request.user
+            )
+            for opponent in opponents:
+                opponent.lives = F("lives") - 1
+                opponent.save()
+
+            remaining_players = MatchPlayer.objects.filter(match=match, lives__gt=0)
+            if remaining_players.count() == 1:
+                match.status = "completed"
+                match.winner = remaining_players.first().player
+                match.save()
+
+                for mp in MatchPlayer.objects.filter(match=match):
+                    mp.player.matches_count = F("matches_count") + 1
+                    mp.player.save()
+
+                winner_entry = MatchPlayer.objects.filter(
+                    match=match, player=match.winner
+                ).first()
+                if winner_entry:
+                    winner_entry.player.wins = F("wins") + 1
+                    winner_entry.player.save()
+
+            else:
+                match_player.current_word_index = F("current_word_index") + 1
+                match_player.save()
+                match_player.refresh_from_db()
+
+                next_game = MatchGame.objects.filter(
+                    match=match,
+                    player=request.user,
+                    word_index=match_player.current_word_index,
+                ).first()
+
+                if next_game:
+                    next_game.is_active = True
+                    next_game.save()
+
+            return Response(
+                {
+                    "message": f"Correct! Opponent lost a life.",
+                    "game": GameSerializer(game).data,
+                }
+            )
+
+        if game.get_tries_left() == 0:
+            active_game.is_active = False
+            active_game.save()
+
+            match_player.lives = F("lives") - 1
+            match_player.save()
+            match_player.refresh_from_db()
+
+            if match_player.lives <= 0:
+                remaining_players = MatchPlayer.objects.filter(match=match, lives__gt=0)
+                if remaining_players.exists():
+                    match.status = "completed"
+                    match.winner = remaining_players.first().player
+                    match.save()
+
+                    for mp in MatchPlayer.objects.filter(match=match):
+                        mp.player.matches_count = F("matches_count") + 1
+                        mp.player.save()
+
+                    winner_entry = MatchPlayer.objects.filter(
+                        match=match, player=match.winner
+                    ).first()
+                    if winner_entry:
+                        winner_entry.player.wins = F("wins") + 1
+                        winner_entry.player.save()
+                else:
+                    match.status = "completed"
+                    match.save()
+
+                    for mp in MatchPlayer.objects.filter(match=match):
+                        mp.player.matches_count = F("matches_count") + 1
+                        mp.player.save()
+            else:
+                match_player.current_word_index = F("current_word_index") + 1
+                match_player.save()
+                match_player.refresh_from_db()
+
+                next_game = MatchGame.objects.filter(
+                    match=match,
+                    player=request.user,
+                    word_index=match_player.current_word_index,
+                ).first()
+
+                if next_game:
+                    next_game.is_active = True
+                    next_game.save()
+
+            return Response(
+                {
+                    "message": f"Ran out of tries. Word was {game.word}.",
+                    "game": GameSerializer(game).data,
+                }
+            )
+
+        return Response(GameSerializer(game).data)
