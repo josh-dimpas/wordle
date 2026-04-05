@@ -1,18 +1,17 @@
 from django.apps import AppConfig
 from typing import Final
 
+import os
+
 class GameConfig(AppConfig):
     name = 'game'
 
-    ENABLE_AUTH = Final = True
+    GAME_CODE_LENGTH: Final = int(os.getenv('GAME_CODE_LENGTH', '6'))
+    GAME_MAX_TRIES: Final = int(os.getenv('GAME_MAX_TRIES', '6'))
 
-    GAME_CODE_LENGTH: Final = 6
-    GAME_MAX_TRIES: Final = 6
+    WORD_MAX_LENGTH: Final = int(os.getenv('WORD_MAX_LENGTH', '5'))
+    WORD_MIN_LENGTH: Final = int(os.getenv('WORD_MIN_LENGTH', '5'))
+    WORD_CORRECT_EXACT_IDENTIFIER: Final = os.getenv('WORD_CHAR_EXACT_IDENTIFIER', '/')
+    WORD_CORRECT_PARTIAL_IDENTIFIER: Final = os.getenv('WORD_CHAR_PARTIAL_IDENTIFIER', '+')
 
-    WORD_MAX_LENGTH: Final = 8
-    WORD_MIN_LENGTH: Final = 5
-    WORD_CORRECT_EXACT_IDENTIFIER: Final = '/'
-    WORD_CORRECT_PARTIAL_IDENTIFIER: Final = '+'
-
-    ANON_USERNAME: Final = 'anon'
-
+    ANON_USERNAME: Final = os.getenv('ANON_USERNAME', 'anon')
