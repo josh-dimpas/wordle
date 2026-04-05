@@ -1,10 +1,10 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import views
 
 urlpatterns = [
-    path("login", views.LoginViewClass.as_view(), name="login") ,
+    path('login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path("register", views.RegisterViewClass.as_view(), name="register") ,
-    # This url is purely for testing
-    path("jwt/<str:username>", views.JWTViewClass.as_view(), name="jwt-test")
+    path('refresh-token', TokenRefreshView.as_view(), name='token_refresh'),
 ]
