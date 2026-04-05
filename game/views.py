@@ -71,7 +71,7 @@ class ViewGameView(APIView):
 class GuessView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, game_id):
+    def post(self, request, game_id: str, input: str):
         username = request.user.username
         game = Game.objects.filter(id=game_id).first()
 
@@ -86,17 +86,10 @@ class GuessView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        input_word = request.data.get("input") or request.query_params.get("input")
-        if not input_word:
-            return Response(
-                {"error": "Missing 'input' parameter"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if len(input_word) != len(game.word):
+        if len(input) != len(game.word):
             return Response(
                 {
-                    "error": f"Please provide a word with matching length. You sent {len(input_word)}, required is {len(game.word)}"
+                    "error": f"Please provide a word with matching length. You sent {len(input)}, required is {len(game.word)}"
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -107,9 +100,9 @@ class GuessView(APIView):
         if game.get_is_finished():
             return Response({"message": f"You ran out of tries. Word is {game.word}."})
 
-        game.guess(input_word)
+        game.guess(input)
 
-        if game.word == input_word:
+        if game.word == input:
             return Response(
                 {"message": f"You guessed correctly in just {len(game.tries)} tries! "}
             )

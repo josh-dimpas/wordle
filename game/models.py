@@ -43,16 +43,6 @@ class Game(models.Model):
     def get_tries_left(self) -> int:
         return self.max_tries - len(self.tries)
 
-    def to_json(self):
-        tries_left = self.get_tries_left()
-        return {
-            "tries_left": tries_left,
-            "tries": self.get_tries(),
-            "word_length": len(self.word),
-            "created_at": self.created_at.__str__(),
-            **({ "word": self.word } if self.get_is_finished() else {})
-        }
-
     def __str__(self):
         tries = self.get_tries()
 

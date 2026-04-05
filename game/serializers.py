@@ -2,22 +2,13 @@ from rest_framework import serializers
 from .models import Game
 
 
-class GameSerializer(serializers.ModelSerializer):
+class GameSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     tries_left = serializers.SerializerMethodField()
+    tries = serializers.SerializerMethodField()
     word_length = serializers.SerializerMethodField()
     word = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Game
-        fields = ["id", "tries_left", "tries", "word_length", "created_at", "word"]
-        read_only_fields = [
-            "id",
-            "tries_left",
-            "tries",
-            "word_length",
-            "created_at",
-            "word",
-        ]
+    created_at = serializers.DateTimeField(read_only=True)
 
     def get_tries_left(self, obj):
         return obj.get_tries_left()
