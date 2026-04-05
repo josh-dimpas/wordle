@@ -1,17 +1,27 @@
 import random
 import string
 
+from django.db import transaction
+from django.db.models import F
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Lobby, LobbyMembership, Match
+from game.models import Game
+from game.services import WordService
+from game.serializers import GameSerializer
+from django.apps import apps
+
+from .models import Lobby, LobbyMembership, Match, MatchPlayer, MatchGame
 from .serializers import (
     JoinLobbySerializer,
     LobbySerializer,
     MatchSerializer,
+    MatchGuessSerializer,
 )
+
+config = apps.get_app_config("game")
 
 
 def generate_lobby_code():
@@ -178,9 +188,33 @@ class LobbyStartView(APIView):
         match = Match.objects.create(lobby=lobby, status="active")
         match.players.set(lobby.players.all())
 
+        num_players = lobby.players.count()
+        words_per_player = config.MULTIPLAYER_LIVES * num_players
+
         for membership in lobby.memberships.all():
             membership.is_ready = False
             membership.save()
+
+            MatchPlayer.objects.create(
+                match=match,
+                player=membership.player,
+                lives=config.MULTIPLAYER_LIVES,
+                current_word_index=0,
+            )
+
+            words = WordService.get_random_words(words_per_player)
+            for i, word in enumerate(words):
+                game = Game.objects.create(
+                    word=word,
+                    player=membership.player,
+                )
+                MatchGame.objects.create(
+                    match=match,
+                    player=membership.player,
+                    word_index=i,
+                    is_active=(i == 0),
+                    game_id=game.id,
+                )
 
         serializer = MatchSerializer(match)
         return Response(serializer.data)
