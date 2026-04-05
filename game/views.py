@@ -11,7 +11,6 @@ from .serializers import (
     GameSummarySerializer,
 )
 from .services import WordService
-from .utils import config
 
 
 class IndexView(APIView):
@@ -23,8 +22,7 @@ class IndexView(APIView):
                 "message": (
                     "Welcome to wordle API. "
                     "Login your account with /login. "
-                    "Don't have an account yet? try /register. "
-                    f"Start a game immediately now with /{config.ANON_USERNAME}/play"
+                    "Don't have an account yet? try /register."
                 )
             }
         )
@@ -119,9 +117,6 @@ class AccountStatsView(APIView):
     def get(self, request):
         username = request.user.username
 
-        if username == config.ANON_USERNAME:
-            return Response({"message": "No stats for anon"})
-
         offset = int(request.query_params.get("offset", "0"))
         limit = int(request.query_params.get("limit", "10"))
         order = request.query_params.get("order", "desc")
@@ -154,8 +149,7 @@ class LeaderboardsView(APIView):
         is_descending = order == "desc"
 
         players = (
-            Game.objects.exclude(player=config.ANON_USERNAME)
-            .values("player")
+            Game.objects.values("player")
             .annotate(
                 games_won=Count("id", filter=Q(is_win=True)),
                 games_played=Count("id"),
