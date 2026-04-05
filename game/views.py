@@ -1,153 +1,197 @@
-from django.apps import apps
 from django.db import connection
-from django.forms import ValidationError
-from django.http import HttpRequest, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from game.apps import GameConfig
-from game.middleware import AccountAccessMiddleware
-from game.models import Game
-from game.services import WordService
-from game.utils import generate_code
+from .models import Game
+from .serializers import (
+    AccountStatsSerializer,
+    GameCreateSerializer,
+    GameSerializer,
+    GameSummarySerializer,
+)
+from .services import WordService
+from .utils import config
 
-config: GameConfig = apps.get_app_config('game')
 
-# TODO: change to class based views for properly handling POST methods
+class IndexView(APIView):
+    permission_classes = [AllowAny]
 
-# Create your views here.
-def index(request):
-    return JsonResponse(
-        { 
-         "message": "Welcome to wordle API."
-         " Login your account with /login"
-         " Don't have an account yet? try /register."
-         f" Start a game immediately now with /{config.ANON_USERNAME}/play"
-         }
-    )
+    def get(self, request):
+        return Response(
+            {
+                "message": (
+                    "Welcome to wordle API. "
+                    "Login your account with /login. "
+                    "Don't have an account yet? try /register. "
+                    f"Start a game immediately now with /{config.ANON_USERNAME}/play"
+                )
+            }
+        )
 
-@csrf_exempt
-@AccountAccessMiddleware(match_username=True)
-def play(request, username: str):
 
-    game = Game.objects.create(
-        code = generate_code(),
-        word = WordService.get_random_word(),
-        player = username
-    )
+class PlayView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    return JsonResponse({ 'game_code': game.code })
+    def post(self, request):
+        username = request.user.username
 
-@csrf_exempt
-@AccountAccessMiddleware(match_username=True)
-def view_game(request, username: str, game_code: str):
-    game = Game.objects.filter(code=game_code).first()
+        game = Game.objects.create(
+            word=WordService.get_random_word(),
+            player=username,
+        )
 
-    if game is None:
-        return JsonResponse({ "error": "Game code does not exist" }, status=404)
+        serializer = GameCreateSerializer(game)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    if game.player != username:
-        return JsonResponse({ "error": f"{username} do not have a game with code: {game_code}"})
 
-    return JsonResponse(game.to_json())
-        
-@csrf_exempt
-@AccountAccessMiddleware(match_username=True)
-def guess(request, username: str, game_code: str, input: str):
-    game = Game.objects.filter(code=game_code).first()
+class ViewGameView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    if game is None:
-        return JsonResponse({ "error": "Game code does not exist"}, status=404)
+    def get(self, request, game_id):
+        username = request.user.username
+        game = Game.objects.filter(id=game_id).first()
 
-    if game.player != username:
-        return JsonResponse({ "error": f"{username} do not have a game with code: {game_code}"})
+        if game is None:
+            return Response(
+                {"error": "Game does not exist"}, status=status.HTTP_404_NOT_FOUND
+            )
 
-    # Return an error if guess length is not equal with word length
-    if len(input) != len(game.word):
-        return JsonResponse({ "error": f"Please provide a word with matching length. You sent {len(input)}, required is {len(game.word)}"}, status=403)
+        if game.player != username:
+            return Response(
+                {"error": f"{username} does not own this game"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    # Return a message when guessing a non-active game
-    if game.is_win:
-        return JsonResponse({ "message": f"Game has already won. Word is {game.word}."})
-    
-    if game.get_is_finished():
-        return JsonResponse({ "message": f"You ran out of tries. Word is {game.word}."})
+        serializer = GameSerializer(game)
+        return Response(serializer.data)
 
-    game.guess(input)
 
-    # TEMPORARY MESSAGES (should be handled by frontend)
-    if game.word == input:
-        return JsonResponse({ "message": f"You guessed correctly in just {len(game.tries)} tries! "})
+class GuessView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    if game.get_tries_left() == 0:
-        return JsonResponse({ "message": f"You ran out of tries. Word is {game.word}"})
+    def post(self, request, game_id):
+        username = request.user.username
+        game = Game.objects.filter(id=game_id).first()
 
-    return JsonResponse(game.to_json())
+        if game is None:
+            return Response(
+                {"error": "Game does not exist"}, status=status.HTTP_404_NOT_FOUND
+            )
 
-@csrf_exempt
-@AccountAccessMiddleware(match_username=False)
-def account_stats(request: HttpRequest, username: str):
-    offset = int(request.GET.get('offset', '0'))
-    limit = int(request.GET.get('limit', '10'))
-    order = request.GET.get('order', 'desc') 
+        if game.player != username:
+            return Response(
+                {"error": f"{username} does not own this game"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    is_descending =  order == 'desc' 
+        input_word = request.data.get("input") or request.query_params.get("input")
+        if not input_word:
+            return Response(
+                {"error": "Missing 'input' parameter"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    try :
+        if len(input_word) != len(game.word):
+            return Response(
+                {
+                    "error": f"Please provide a word with matching length. You sent {len(input_word)}, required is {len(game.word)}"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if game.is_win:
+            return Response({"message": f"Game has already won. Word is {game.word}."})
+
+        if game.get_is_finished():
+            return Response({"message": f"You ran out of tries. Word is {game.word}."})
+
+        game.guess(input_word)
+
+        if game.word == input_word:
+            return Response(
+                {"message": f"You guessed correctly in just {len(game.tries)} tries! "}
+            )
+
+        if game.get_tries_left() == 0:
+            return Response({"message": f"You ran out of tries. Word is {game.word}"})
+
+        serializer = GameSerializer(game)
+        return Response(serializer.data)
+
+
+class AccountStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        username = request.user.username
+
         if username == config.ANON_USERNAME:
-            return JsonResponse({ "message": "No stats for anon"})
+            return Response({"message": "No stats for anon"})
 
-        # Get all games with that player
-        games = Game.objects.filter(player=username).order_by(f'{'-' if is_descending else ''}created_at')[offset : offset + limit]
+        offset = int(request.query_params.get("offset", "0"))
+        limit = int(request.query_params.get("limit", "10"))
+        order = request.query_params.get("order", "desc")
+        is_descending = order == "desc"
+
+        games = Game.objects.filter(player=username).order_by(
+            f"-created_at" if is_descending else "created_at"
+        )[offset : offset + limit]
+
         won_games = [obj for obj in games if obj.is_win]
 
-        return JsonResponse({
-            "games_played": len(games),
-            "games_won": len(won_games),
-            "games": [
+        games_data = GameSummarySerializer(
+            [
                 {
-                    "code": g.code,
+                    "id": g.id,
                     "won": g.is_win,
                     "tries_left": g.get_tries_left(),
                     "created_at": g.created_at,
-                } for g in games
-            ]
-        })
-    except ValidationError as e:
-        return JsonResponse({ "error": e.message }, status = 401)
+                }
+                for g in games
+            ],
+            many=True,
+        ).data
 
-    except BaseException as e:
-        return JsonResponse({ "error": e }, status = 401)
+        return Response(
+            {
+                "games_played": len(games),
+                "games_won": len(won_games),
+                "games": games_data,
+            }
+        )
 
-@csrf_exempt
-def leaderboards(request: HttpRequest):
-    offset = int(request.GET.get('offset', '0'))
-    limit = max(1, min(50, int(request.GET.get('limit', '10'))))
-    order = request.GET.get('order', 'desc') 
 
-    is_descending = order == 'desc'
+class LeaderboardsView(APIView):
+    permission_classes = [AllowAny]
 
-    # Get all games grouped by players
-    query = f"""
-    SELECT
-        g.player,
-        COUNT(CASE WHEN g.is_win = TRUE THEN 1 END) as games_won,
-        COUNT(*) AS games_played
-    FROM game_game AS g
-    WHERE g.player != '{config.ANON_USERNAME}'
-    GROUP BY g.player
-    ORDER BY games_won {'DESC' if is_descending else 'ASC'}
-    LIMIT {limit}
-    {'' if offset == 0 else f"OFFSET {offset}"}
-    """
+    def get(self, request):
+        offset = int(request.query_params.get("offset", "0"))
+        limit = max(1, min(50, int(request.query_params.get("limit", "10"))))
+        order = request.query_params.get("order", "desc")
+        is_descending = order == "desc"
 
-    with connection.cursor() as cursor:
-        cursor.execute(query)
+        query = f"""
+        SELECT
+            g.player,
+            COUNT(CASE WHEN g.is_win = TRUE THEN 1 END) as games_won,
+            COUNT(*) AS games_played
+        FROM game_game AS g
+        WHERE g.player != '{config.ANON_USERNAME}'
+        GROUP BY g.player
+        ORDER BY games_won {"DESC" if is_descending else "ASC"}
+        LIMIT {limit}
+        {"" if offset == 0 else f"OFFSET {offset}"}
+        """
 
-        columns = [col[0] for col in cursor.description]
-        players = [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
+        with connection.cursor() as cursor:
+            cursor.execute(query)
 
-        print(players)
-        return JsonResponse(players, safe=False)
+            if not cursor.description:
+                return Response([], status=status.HTTP_200_OK)
+
+            columns = [col[0] for col in cursor.description]
+            players = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+            return Response(players)
