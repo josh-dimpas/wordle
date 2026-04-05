@@ -218,3 +218,23 @@ class LobbyStartView(APIView):
 
         serializer = MatchSerializer(match)
         return Response(serializer.data)
+
+
+class MatchStateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, match_id):
+        match = Match.objects.filter(id=match_id).first()
+
+        if match is None:
+            return Response(
+                {"error": "Match not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not match.players.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not in this match"}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = MatchSerializer(match)
+        return Response(serializer.data)
