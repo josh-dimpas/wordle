@@ -7,4 +7,5 @@ urlpatterns = [
     path("lobby/join", views.LobbyJoinView.as_view(), name="lobby_join"),
     path("lobby/leave", views.LobbyLeaveView.as_view(), name="lobby_leave"),
     path("lobby/current", views.LobbyCurrentView.as_view(), name="lobby_current"),
+    path("lobby/ready", views.LobbyReadyView.as_view(), name="lobby_ready"),
 ]

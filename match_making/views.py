@@ -105,3 +105,29 @@ class LobbyCurrentView(APIView):
 
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
+
+
+class LobbyReadyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        lobby = Lobby.objects.filter(players=request.user).first()
+
+        if lobby is None:
+            return Response(
+                {"error": "You are not in any lobby"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if lobby.has_started:
+            return Response(
+                {"error": "Lobby has already started"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        membership = lobby.memberships.filter(player=request.user).first()
+        if membership:
+            membership.is_ready = not membership.is_ready
+            membership.save()
+
+        serializer = LobbySerializer(lobby, context={"request": request})
+        return Response(serializer.data)
