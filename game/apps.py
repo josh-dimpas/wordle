@@ -8,6 +8,7 @@ class GameConfig(AppConfig):
     name = "game"
 
     GAME_MAX_TRIES: Final = int(os.getenv("GAME_MAX_TRIES", "6"))
+    MULTIPLAYER_LIVES: Final = int(os.getenv("MULTIPLAYER_LIVES", "3"))
 
     WORD_MAX_LENGTH: Final = int(os.getenv("WORD_MAX_LENGTH", "5"))
     WORD_MIN_LENGTH: Final = int(os.getenv("WORD_MIN_LENGTH", "5"))
