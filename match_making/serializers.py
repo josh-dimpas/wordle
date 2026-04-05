@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Lobby, LobbyMembership, Match
+from .models import Lobby, LobbyMembership, Match, MatchPlayer, MatchGame
 
 
 class LobbyMembershipSerializer(serializers.ModelSerializer):
@@ -40,6 +40,29 @@ class LobbySerializer(serializers.ModelSerializer):
 
 class JoinLobbySerializer(serializers.Serializer):
     code = serializers.CharField(max_length=9)
+
+
+class MatchGameSerializer(serializers.Serializer):
+    word_index = serializers.IntegerField()
+    is_active = serializers.BooleanField()
+    game_id = serializers.IntegerField()
+
+
+class MatchPlayerSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="player.username", read_only=True)
+    current_game = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MatchPlayer
+        fields = ["username", "lives", "current_word_index", "current_game"]
+
+    def get_current_game(self, obj):
+        match_game = MatchGame.objects.filter(
+            match=obj.match, player=obj.player, word_index=obj.current_word_index
+        ).first()
+        if match_game:
+            return MatchGameSerializer(match_game).data
+        return None
 
 
 class MatchSerializer(serializers.ModelSerializer):

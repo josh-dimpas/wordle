@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils import timezone
 
+from django.apps import apps
 from users.models import Account
 
+config = apps.get_app_config("game")
 
 class Lobby(models.Model):
     code = models.CharField(max_length=9, unique=True)
@@ -67,3 +69,33 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match {self.id} - {self.status}"
+
+
+class MatchPlayer(models.Model):
+    match = models.ForeignKey(
+        Match, on_delete=models.CASCADE, related_name="match_players"
+    )
+    player = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="match_entries"
+    )
+    lives = models.IntegerField(default=config.MULTIPLAYER_LIVES)
+    current_word_index = models.IntegerField(default=0)
+    joined_at = models.DateTimeField("Joined At", default=timezone.now)
+
+    class Meta:
+        unique_together = ("match", "player")
+
+
+class MatchGame(models.Model):
+    match = models.ForeignKey(
+        Match, on_delete=models.CASCADE, related_name="match_games"
+    )
+    player = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="match_games"
+    )
+    word_index = models.IntegerField()
+    is_active = models.BooleanField(default=False)
+    game_id = models.IntegerField()
+
+    class Meta:
+        unique_together = ("match", "player", "word_index")
