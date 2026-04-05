@@ -1,4 +1,4 @@
-from django.db import connection
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 
 from .models import Game
 from .serializers import (
-    AccountStatsSerializer,
     GameCreateSerializer,
     GameSerializer,
     GameSummarySerializer,
@@ -154,26 +153,16 @@ class LeaderboardsView(APIView):
         order = request.query_params.get("order", "desc")
         is_descending = order == "desc"
 
-        query = f"""
-        SELECT
-            g.player,
-            COUNT(CASE WHEN g.is_win = TRUE THEN 1 END) as games_won,
-            COUNT(*) AS games_played
-        FROM game_game AS g
-        WHERE g.player != '{config.ANON_USERNAME}'
-        GROUP BY g.player
-        ORDER BY games_won {"DESC" if is_descending else "ASC"}
-        LIMIT {limit}
-        {"" if offset == 0 else f"OFFSET {offset}"}
-        """
+        players = (
+            Game.objects.exclude(player=config.ANON_USERNAME)
+            .values("player")
+            .annotate(
+                games_won=Count("id", filter=Q(is_win=True)),
+                games_played=Count("id"),
+            )
+            .order_by("-games_won" if is_descending else "games_won")[
+                offset : offset + limit
+            ]
+        )
 
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-
-            if not cursor.description:
-                return Response([], status=status.HTTP_200_OK)
-
-            columns = [col[0] for col in cursor.description]
-            players = [dict(zip(columns, row)) for row in cursor.fetchall()]
-
-            return Response(players)
+        return Response(players)
