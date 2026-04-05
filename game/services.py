@@ -9,9 +9,7 @@ REQUEST_TIMEOUT: Final = 30
 
 
 class WordService:
-    FALLBACK_WORDS = [
-        "apple", "orange", "house", "neovim"
-    ]
+    FALLBACK_WORDS = ["apple", "orange", "house", "neovim"]
 
     @classmethod
     def fetch_word(cls) -> str:
@@ -22,7 +20,7 @@ class WordService:
         response = requests.get(f"{API_URL}?length={length}", timeout=REQUEST_TIMEOUT)
 
         if response.status_code == 200:
-            data : List[str] = response.json()
+            data: List[str] = response.json()
             return data[0]
         else:
             raise Exception(f"Random word fetch failed: [{response.status_code}]")
@@ -38,26 +36,24 @@ class WordService:
         )
 
         if response.status_code == 200:
-            data : List[str] = response.json()
+            data: List[str] = response.json()
             return data
         else:
             raise Exception(f"Random word fetch failed: [{response.status_code}]")
 
     @classmethod
     def get_random_word(cls) -> str:
-        # Try requesting on api
         try:
             return cls.fetch_word()
         except requests.exceptions.Timeout:
             print(f"Timeout fetching word, using fallback")
             return random.choice(cls.FALLBACK_WORDS)
         except BaseException as e:
-            print(f"Error on fetching words: {e}")
+            print(f"Error on fetching word: {e}")
             return random.choice(cls.FALLBACK_WORDS)
 
     @classmethod
     def get_random_words(cls, amount: int) -> List[str]:
-        # Try requesting on api
         try:
             return cls.fetch_words(amount=amount)
         except requests.exceptions.Timeout:
