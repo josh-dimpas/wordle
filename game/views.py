@@ -129,23 +129,12 @@ class AccountStatsView(APIView):
         is_descending = order == "desc"
 
         games = Game.objects.filter(player=username).order_by(
-            f"-created_at" if is_descending else "created_at"
+            "-created_at" if is_descending else "created_at"
         )[offset : offset + limit]
 
         won_games = [obj for obj in games if obj.is_win]
 
-        games_data = GameSummarySerializer(
-            [
-                {
-                    "id": g.id,
-                    "won": g.is_win,
-                    "tries_left": g.get_tries_left(),
-                    "created_at": g.created_at,
-                }
-                for g in games
-            ],
-            many=True,
-        ).data
+        games_data = GameSummarySerializer(games, many=True).data
 
         return Response(
             {

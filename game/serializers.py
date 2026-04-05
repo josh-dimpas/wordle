@@ -45,6 +45,9 @@ class AccountStatsSerializer(serializers.Serializer):
 
 class GameSummarySerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    won = serializers.BooleanField()
-    tries_left = serializers.IntegerField()
+    won = serializers.BooleanField(source="is_win")
+    tries_left = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField()
+
+    def get_tries_left(self, obj):
+        return obj.get_tries_left()
