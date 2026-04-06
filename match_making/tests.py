@@ -396,3 +396,231 @@ class LobbyStartViewTests(APITestCase):
             self.assertFalse(membership.is_ready)
 
 
+def create_test_match():
+    user1 = Account.objects.create_user(username="mp1", password="test")
+    user2 = Account.objects.create_user(username="mp2", password="test")
+
+    lobby = Lobby.objects.create(owner=user1, code="testmatch1")
+    LobbyMembership.objects.create(lobby=lobby, player=user1, is_ready=True)
+    LobbyMembership.objects.create(lobby=lobby, player=user2, is_ready=True)
+
+    refresh1 = RefreshToken.for_user(user1)
+    refresh2 = RefreshToken.for_user(user2)
+
+    return user1, user2, lobby, str(refresh1.access_token), str(refresh2.access_token)
+
+
+def start_match_via_api(client, token):
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client.post("/matchmaking/lobby/start")
+
+
+class MatchStateViewTests(APITestCase):
+    def setUp(self):
+        self.user1, self.user2, self.lobby, self.token1, self.token2 = (
+            create_test_match()
+        )
+        response = start_match_via_api(self.client, self.token1)
+        self.match_id = response.data["id"]
+
+    def test_match_state_requires_authentication(self):
+        self.client.credentials()
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_match_state_not_found(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get("/matchmaking/match/99999")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_match_state_user_not_in_match(self):
+        other_user = Account.objects.create_user(username="notinmatch", password="test")
+        refresh = RefreshToken.for_user(other_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_match_state_returns_match_info(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("id", response.data)
+        self.assertEqual(response.data["status"], "active")
+
+    def test_match_state_includes_players_with_lives(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("players", response.data)
+        self.assertEqual(len(response.data["players"]), 2)
+
+    def test_match_state_includes_current_word_index(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for player in response.data["players"]:
+            self.assertIn("current_word_index", player)
+            self.assertIn("lives", player)
+
+
+class MatchGuessViewTests(APITestCase):
+    def setUp(self):
+        self.user1, self.user2, self.lobby, self.token1, self.token2 = (
+            create_test_match()
+        )
+        response = start_match_via_api(self.client, self.token1)
+        self.match_id = response.data["id"]
+
+        self.match = Match.objects.get(id=self.match_id)
+        self.match_player1 = MatchPlayer.objects.get(
+            match=self.match, player=self.user1
+        )
+        self.match_player2 = MatchPlayer.objects.get(
+            match=self.match, player=self.user2
+        )
+
+        self.active_game = MatchGame.objects.get(
+            match=self.match, player=self.user1, is_active=True
+        )
+        self.game = Game.objects.get(id=self.active_game.game_id)
+        self.correct_word = self.game.word
+
+    def test_guess_requires_authentication(self):
+        self.client.credentials()
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_guess_match_not_found(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post(
+            "/matchmaking/match/99999/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_guess_match_not_active(self):
+        self.match.status = "completed"
+        self.match.save()
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_guess_user_not_in_match(self):
+        other_user = Account.objects.create_user(username="notinmatch", password="test")
+        refresh = RefreshToken.for_user(other_user)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_guess_wrong_word_length(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess", {"input": "ab"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_guess_correct_word_returns_success_message(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
+        self.assertIn("Correct", response.data["message"])
+
+    def test_guess_wrong_word_returns_game_state(self):
+        word_length = len(self.correct_word)
+        wrong_word = (
+            "a" * word_length
+            if self.correct_word != "a" * word_length
+            else "b" * word_length
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": wrong_word},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("tries", response.data)
+
+    def test_guess_correct_word_deducts_opponent_life(self):
+        initial_lives = self.match_player2.lives
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+
+        self.match_player2.refresh_from_db()
+        self.assertEqual(self.match_player2.lives, initial_lives - 1)
+
+    def test_guess_correct_word_opponent_no_lives_sets_winner(self):
+        self.match_player2.lives = 1
+        self.match_player2.save()
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.status, "completed")
+        self.assertEqual(self.match.winner, self.user1)
+
+    def test_guess_sets_next_game_active(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+
+        self.active_game.refresh_from_db()
+        self.assertFalse(self.active_game.is_active)
+
+        next_game = MatchGame.objects.filter(
+            match=self.match, player=self.user1, word_index=1
+        ).first()
+        self.assertTrue(next_game.is_active)
+
+    def test_guess_updates_match_player_word_index(self):
+        initial_index = self.match_player1.current_word_index
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post(
+            f"/matchmaking/match/{self.match_id}/guess",
+            {"input": self.correct_word},
+            format="json",
+        )
+
+        self.match_player1.refresh_from_db()
+        self.assertEqual(self.match_player1.current_word_index, initial_index + 1)
