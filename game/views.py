@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from match_making.models import Match, MatchPlayer
+from match_making.models import Match
 from .models import Game
 from .serializers import (
     GameCreateSerializer,
@@ -146,7 +146,7 @@ class LeaderboardsView(APIView):
 
         players = (
             Account.objects.filter(matches_count__gt=0)
-            .values("username", "wins", "matches_count")
+            .values("id", "username", "wins", "matches_count")
             .order_by("-wins" if is_descending else "wins")[offset : offset + limit]
         )
 

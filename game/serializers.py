@@ -57,6 +57,7 @@ class GameSummarySerializer(serializers.Serializer):
 
 
 class LeaderboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     username = serializers.CharField()
     wins = serializers.IntegerField()
     matches_count = serializers.IntegerField()
