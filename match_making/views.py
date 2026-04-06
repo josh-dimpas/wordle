@@ -1,8 +1,10 @@
 import random
 import string
+from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import F
+from django.db.models import Count, F
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,7 +20,6 @@ from .serializers import (
     JoinLobbySerializer,
     LobbySerializer,
     MatchSerializer,
-    MatchGuessSerializer,
 )
 
 config = apps.get_app_config("game")
@@ -248,12 +249,8 @@ class MatchGuessView(APIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
-    def post(self, request, match_id):
-        serializer = MatchGuessSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        input_word = serializer.validated_data["input"]
+    def post(self, request, match_id, input):
+        input_word = input
 
         match = Match.objects.filter(id=match_id).first()
 
@@ -418,3 +415,112 @@ class MatchGuessView(APIView):
             )
 
         return Response(GameSerializer(game).data)
+
+
+class MatchFindView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        existing_match = Match.objects.filter(
+            players=request.user, status__in=["pending", "active"]
+        ).first()
+        if existing_match:
+            return Response(
+                {"error": "You are already in a match"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        timeout_minutes = config.PENDING_MATCH_TIMEOUT_MINUTES
+        stale_threshold = timezone.now() - timedelta(minutes=timeout_minutes)
+        Match.objects.filter(status="pending", created_at__lt=stale_threshold).delete()
+
+        pending_match = (
+            Match.objects.filter(status="pending")
+            .annotate(player_count=Count("players"))
+            .filter(player_count=1)
+            .first()
+        )
+
+        if pending_match:
+            pending_match.players.add(request.user)
+            MatchPlayer.objects.create(
+                match=pending_match,
+                player=request.user,
+                lives=config.MULTIPLAYER_LIVES,
+                current_word_index=0,
+            )
+
+            num_players = 2
+            words_per_player = config.MULTIPLAYER_LIVES * num_players
+
+            existing_player = pending_match.match_players.exclude(
+                player=request.user
+            ).first()
+            if existing_player:
+                existing_player.current_word_index = 0
+                existing_player.save()
+
+            for player in pending_match.players.all():
+                existing_games = MatchGame.objects.filter(
+                    match=pending_match, player=player
+                ).exists()
+                if not existing_games:
+                    words = WordService.get_random_words(words_per_player)
+                    for i, word in enumerate(words):
+                        game = Game.objects.create(word=word, player=player)
+                        MatchGame.objects.create(
+                            match=pending_match,
+                            player=player,
+                            word_index=i,
+                            is_active=(i == 0),
+                            game_id=game.id,
+                        )
+
+            pending_match.status = "active"
+            pending_match.save()
+
+            serializer = MatchSerializer(pending_match)
+            return Response(
+                {**serializer.data, "message": "Match started!"},
+            )
+
+        match = Match.objects.create(status="pending")
+        match.players.add(request.user)
+        MatchPlayer.objects.create(
+            match=match,
+            player=request.user,
+            lives=config.MULTIPLAYER_LIVES,
+            current_word_index=0,
+        )
+
+        serializer = MatchSerializer(match)
+        return Response(
+            {**serializer.data, "message": "Waiting for opponent..."},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class MatchCancelView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        match = (
+            Match.objects.filter(
+                players=request.user,
+                status="pending",
+            )
+            .annotate(player_count=Count("players"))
+            .filter(player_count=1)
+            .first()
+        )
+
+        if not match:
+            return Response(
+                {"error": "No cancellable match found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        match.delete()
+        return Response({"message": "Match cancelled successfully"})
