@@ -71,12 +71,15 @@ class LobbyJoinView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if lobby.players.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are already in this lobby"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         existing_lobby = Lobby.objects.filter(players=request.user).first()
         if existing_lobby:
             existing_lobby.remove_player(request.user)
-
-        if lobby.players.filter(id=request.user.id).exists():
-            return Response({"error": "You are already in this lobby"})
 
         LobbyMembership.objects.create(lobby=lobby, player=request.user)
 
