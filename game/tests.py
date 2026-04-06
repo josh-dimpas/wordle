@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from match_making.models import Match
 from .models import Game
 from .serializers import GameSerializer, GameSummarySerializer, LeaderboardSerializer
 from users.models import Account
@@ -278,19 +279,28 @@ class AccountStatsViewTests(APITestCase):
         self.assertEqual(response.data["matches_played"], 10)
         self.assertEqual(response.data["matches_won"], 5)
 
-    def test_stats_returns_games_list(self):
+    def test_stats_returns_matches_list(self):
+        opponent = Account.objects.create_user(username="opponent", password="test")
+        match = Match.objects.create(status="completed", winner=self.user)
+        match.players.add(self.user, opponent)
+
         response = self.client.get("/stats")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("games", response.data)
-        self.assertEqual(len(response.data["games"]), 1)
+        self.assertIn("matches", response.data)
+        self.assertEqual(len(response.data["matches"]), 1)
 
     def test_stats_pagination(self):
-        Game.objects.create(player=self.user, word="world")
+        opponent = Account.objects.create_user(username="opponent2", password="test")
+        match1 = Match.objects.create(status="completed", winner=self.user)
+        match1.players.add(self.user, opponent)
+        match2 = Match.objects.create(status="completed", winner=opponent)
+        match2.players.add(self.user, opponent)
+
         response = self.client.get("/stats?offset=0&limit=1")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["games"]), 1)
+        self.assertEqual(len(response.data["matches"]), 1)
 
 
 class LeaderboardsViewTests(APITestCase):
