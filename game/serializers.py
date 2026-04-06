@@ -38,10 +38,12 @@ class GuessSerializer(serializers.Serializer):
     input = serializers.CharField(max_length=50)
 
 
-class AccountStatsSerializer(serializers.Serializer):
-    matches_played = serializers.IntegerField()
-    matches_won = serializers.IntegerField()
-    games = serializers.ListField()
+class MatchHistorySerializer(serializers.Serializer):
+    game_id = serializers.IntegerField()
+    won = serializers.BooleanField()
+    opponent = serializers.CharField()
+    opponent_id = serializers.IntegerField()
+    date = serializers.DateTimeField()
 
 
 class GameSummarySerializer(serializers.Serializer):

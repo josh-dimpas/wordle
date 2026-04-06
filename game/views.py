@@ -3,13 +3,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from match_making.models import Match, MatchPlayer
 from .models import Game
 from .serializers import (
-    AccountStatsSerializer,
     GameCreateSerializer,
     GameSerializer,
-    GameSummarySerializer,
     LeaderboardSerializer,
+    MatchHistorySerializer,
 )
 from .services import WordService
 
@@ -105,17 +105,30 @@ class AccountStatsView(APIView):
         order = request.query_params.get("order", "desc")
         is_descending = order == "desc"
 
-        games = Game.objects.filter(player=request.user).order_by(
+        matches = Match.objects.filter(players=request.user).order_by(
             "-created_at" if is_descending else "created_at"
         )[offset : offset + limit]
 
-        games_data = GameSummarySerializer(games, many=True).data
+        matches_data = []
+        for match in matches:
+            opponent = match.players.exclude(id=request.user.id).first()
+            matches_data.append(
+                {
+                    "game_id": match.id,
+                    "won": match.winner == request.user,
+                    "opponent": opponent.username if opponent else None,
+                    "opponent_id": opponent.id if opponent else None,
+                    "date": match.created_at,
+                }
+            )
+
+        serializer = MatchHistorySerializer(matches_data, many=True)
 
         return Response(
             {
                 "matches_played": request.user.matches_count,
                 "matches_won": request.user.wins,
-                "games": games_data,
+                "matches": serializer.data,
             }
         )
 
