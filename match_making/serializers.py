@@ -46,6 +46,24 @@ class MatchGameSerializer(serializers.Serializer):
     word_index = serializers.IntegerField()
     is_active = serializers.BooleanField()
     game_id = serializers.IntegerField()
+    tries = serializers.SerializerMethodField()
+    tries_left = serializers.SerializerMethodField()
+
+    def get_tries(self, obj):
+        from game.models import Game
+
+        game = Game.objects.filter(id=obj.game_id).first()
+        if game:
+            return game.get_tries()
+        return []
+
+    def get_tries_left(self, obj):
+        from game.models import Game
+
+        game = Game.objects.filter(id=obj.game_id).first()
+        if game:
+            return game.get_tries_left()
+        return 0
 
 
 class MatchPlayerSerializer(serializers.ModelSerializer):
@@ -78,7 +96,3 @@ class MatchSerializer(serializers.ModelSerializer):
     def get_players(self, obj):
         match_players = obj.match_players.select_related("player").all()
         return MatchPlayerSerializer(match_players, many=True).data
-
-
-class MatchGuessSerializer(serializers.Serializer):
-    input = serializers.CharField(max_length=50)
