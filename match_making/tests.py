@@ -465,6 +465,28 @@ class MatchStateViewTests(APITestCase):
             self.assertIn("current_word_index", player)
             self.assertIn("lives", player)
 
+    def test_match_state_includes_current_game_tries(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for player in response.data["players"]:
+            self.assertIn("current_game", player)
+            self.assertIn("tries", player["current_game"])
+            self.assertIn("tries_left", player["current_game"])
+
+    def test_match_state_tries_are_post_processed(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        guess_response = self.client.post(f"/matchmaking/match/{self.match_id}/wrong")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.get(f"/matchmaking/match/{self.match_id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        current_game = response.data["players"][0]["current_game"]
+        tries = current_game["tries"]
+        self.assertIsInstance(tries, list)
+
 
 class MatchGuessViewTests(APITestCase):
     def setUp(self):
@@ -491,19 +513,13 @@ class MatchGuessViewTests(APITestCase):
     def test_guess_requires_authentication(self):
         self.client.credentials()
         response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
+            f"/matchmaking/match/{self.match_id}/{self.correct_word}"
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_guess_match_not_found(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        response = self.client.post(
-            "/matchmaking/match/99999/guess",
-            {"input": self.correct_word},
-            format="json",
-        )
+        response = self.client.post(f"/matchmaking/match/99999/{self.correct_word}")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_guess_match_not_active(self):
@@ -512,9 +528,7 @@ class MatchGuessViewTests(APITestCase):
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
+            f"/matchmaking/match/{self.match_id}/{self.correct_word}"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -524,26 +538,20 @@ class MatchGuessViewTests(APITestCase):
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
+            f"/matchmaking/match/{self.match_id}/{self.correct_word}"
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_guess_wrong_word_length(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess", {"input": "ab"}, format="json"
-        )
+        response = self.client.post(f"/matchmaking/match/{self.match_id}/ab")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
 
     def test_guess_correct_word_returns_success_message(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
+            f"/matchmaking/match/{self.match_id}/{self.correct_word}"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -559,11 +567,7 @@ class MatchGuessViewTests(APITestCase):
         )
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        response = self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": wrong_word},
-            format="json",
-        )
+        response = self.client.post(f"/matchmaking/match/{self.match_id}/{wrong_word}")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("tries", response.data)
@@ -572,11 +576,7 @@ class MatchGuessViewTests(APITestCase):
         initial_lives = self.match_player2.lives
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
-        )
+        self.client.post(f"/matchmaking/match/{self.match_id}/{self.correct_word}")
 
         self.match_player2.refresh_from_db()
         self.assertEqual(self.match_player2.lives, initial_lives - 1)
@@ -586,11 +586,7 @@ class MatchGuessViewTests(APITestCase):
         self.match_player2.save()
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
-        )
+        self.client.post(f"/matchmaking/match/{self.match_id}/{self.correct_word}")
 
         self.match.refresh_from_db()
         self.assertEqual(self.match.status, "completed")
@@ -598,11 +594,7 @@ class MatchGuessViewTests(APITestCase):
 
     def test_guess_sets_next_game_active(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
-        )
+        self.client.post(f"/matchmaking/match/{self.match_id}/{self.correct_word}")
 
         self.active_game.refresh_from_db()
         self.assertFalse(self.active_game.is_active)
@@ -616,11 +608,120 @@ class MatchGuessViewTests(APITestCase):
         initial_index = self.match_player1.current_word_index
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        self.client.post(
-            f"/matchmaking/match/{self.match_id}/guess",
-            {"input": self.correct_word},
-            format="json",
-        )
+        self.client.post(f"/matchmaking/match/{self.match_id}/{self.correct_word}")
 
         self.match_player1.refresh_from_db()
         self.assertEqual(self.match_player1.current_word_index, initial_index + 1)
+
+
+class MatchFindViewTests(APITestCase):
+    def setUp(self):
+        self.user1 = Account.objects.create_user(username="find1", password="test")
+        self.user2 = Account.objects.create_user(username="find2", password="test")
+        refresh1 = RefreshToken.for_user(self.user1)
+        refresh2 = RefreshToken.for_user(self.user2)
+        self.token1 = str(refresh1.access_token)
+        self.token2 = str(refresh2.access_token)
+
+    def test_find_requires_authentication(self):
+        self.client.credentials()
+        response = self.client.post("/matchmaking/match/find")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_find_creates_pending_match(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post("/matchmaking/match/find")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("id", response.data)
+        self.assertEqual(response.data["status"], "pending")
+        self.assertIn("message", response.data)
+        self.assertEqual(response.data["message"], "Waiting for opponent...")
+
+    def test_find_joins_existing_pending_match(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response1 = self.client.post("/matchmaking/match/find")
+        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        match_id = response1.data["id"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        response2 = self.client.post("/matchmaking/match/find")
+
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        self.assertEqual(response2.data["id"], match_id)
+        self.assertEqual(response2.data["status"], "active")
+        self.assertEqual(response2.data["message"], "Match started!")
+
+    def test_find_while_in_active_match_returns_error(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post("/matchmaking/match/find")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        self.client.post("/matchmaking/match/find")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post("/matchmaking/match/find")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    def test_find_creates_games_for_both_players(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post("/matchmaking/match/find")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        response = self.client.post("/matchmaking/match/find")
+
+        match_id = response.data["id"]
+        match = Match.objects.get(id=match_id)
+
+        for player in match.players.all():
+            match_games = MatchGame.objects.filter(match=match, player=player)
+            self.assertTrue(match_games.exists())
+            self.assertTrue(match_games.filter(is_active=True).exists())
+
+
+class MatchCancelViewTests(APITestCase):
+    def setUp(self):
+        self.user1 = Account.objects.create_user(username="cancel1", password="test")
+        self.user2 = Account.objects.create_user(username="cancel2", password="test")
+        refresh1 = RefreshToken.for_user(self.user1)
+        refresh2 = RefreshToken.for_user(self.user2)
+        self.token1 = str(refresh1.access_token)
+        self.token2 = str(refresh2.access_token)
+
+    def test_cancel_requires_authentication(self):
+        self.client.credentials()
+        response = self.client.post("/matchmaking/match/cancel")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_cancel_success(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post("/matchmaking/match/find")
+
+        response = self.client.post("/matchmaking/match/cancel")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
+        self.assertFalse(
+            Match.objects.filter(players=self.user1, status="pending").exists()
+        )
+
+    def test_cancel_not_found(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post("/matchmaking/match/cancel")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cancel_fails_when_other_player_joined(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post("/matchmaking/match/find")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        self.client.post("/matchmaking/match/find")
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        response = self.client.post("/matchmaking/match/cancel")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Match.objects.filter(status="active").exists())
