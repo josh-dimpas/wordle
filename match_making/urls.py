@@ -9,8 +9,12 @@ urlpatterns = [
     path("lobby/current", views.LobbyCurrentView.as_view(), name="lobby_current"),
     path("lobby/ready", views.LobbyReadyView.as_view(), name="lobby_ready"),
     path("lobby/start", views.LobbyStartView.as_view(), name="lobby_start"),
+    path("match/find", views.MatchFindView.as_view(), name="match_find"),
+    path("match/cancel", views.MatchCancelView.as_view(), name="match_cancel"),
     path("match/<int:match_id>", views.MatchStateView.as_view(), name="match_state"),
     path(
-        "match/<int:match_id>/guess", views.MatchGuessView.as_view(), name="match_guess"
+        "match/<int:match_id>/<str:input>",
+        views.MatchGuessView.as_view(),
+        name="match_guess",
     ),
 ]
