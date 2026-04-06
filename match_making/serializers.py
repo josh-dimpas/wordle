@@ -67,12 +67,13 @@ class MatchGameSerializer(serializers.Serializer):
 
 
 class MatchPlayerSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='player.id', read_only=True)
     username = serializers.CharField(source="player.username", read_only=True)
     current_game = serializers.SerializerMethodField()
 
     class Meta:
         model = MatchPlayer
-        fields = ["username", "lives", "current_word_index", "current_game"]
+        fields = ["id", "username", "lives", "current_word_index", "current_game"]
 
     def get_current_game(self, obj):
         match_game = MatchGame.objects.filter(
