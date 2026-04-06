@@ -507,10 +507,7 @@ class MatchCancelView(APIView):
     @transaction.atomic
     def post(self, request):
         match = (
-            Match.objects.filter(
-                players=request.user,
-                status="pending",
-            )
+            Match.objects.filter(players=request.user)
             .annotate(player_count=Count("players"))
             .filter(player_count=1)
             .first()
