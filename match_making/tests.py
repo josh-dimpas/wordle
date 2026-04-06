@@ -725,3 +725,16 @@ class MatchCancelViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Match.objects.filter(status="active").exists())
+
+    def test_cancel_resets_lobby_has_started(self):
+        lobby = Lobby.objects.create(
+            owner=self.user1, code="canlobb1", has_started=True
+        )
+        LobbyMembership.objects.create(lobby=lobby, player=self.user1)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.client.post("/matchmaking/match/find")
+        self.client.post("/matchmaking/match/cancel")
+
+        lobby.refresh_from_db()
+        self.assertFalse(lobby.has_started)
