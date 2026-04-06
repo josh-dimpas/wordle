@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "441c7bcc-0dd5-4608-b631-6db5e4832076",
+    "_postman_id": "4e0f88ee-07b6-4331-b067-4c055dbb71e3",
     "name": "Wordle",
-    "description": "### Welcome to Postman! This is your first collection.\n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests  \n• Test your API in real-world scenarios  \n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "description": "### Welcome to Postman! This is your first collection.\n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests  \n• Test your API in real-world scenarios  \n• Document and share your requests\n\nUpdate the name and overview whenever you're ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "53531488"
+    "_exporter_id": "23295022"
   },
   "item": [
     {
@@ -98,10 +98,76 @@
       ]
     },
     {
-      "name": "Token (Auth)",
+      "name": "Auth",
       "item": [
         {
-          "name": "Create Token",
+          "name": "Token (Auth)",
+          "item": [
+            {
+              "name": "Create Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"Josh\",\n    \"password\": \"Test123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/api/token/",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "token",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "req = JSON.parse(pm.request.body.raw)",
+                  "",
+                  "const tokenKey = 'access';",
+                  "const refreshKey = 'refresh';",
+                  "",
+                  "// Store jwt access_token",
+                  "if (typeof data[tokenKey] === \"string\" && data[tokenKey].trim().length > 0) {",
+                  "    pm.collectionVariables.set(\"JWT_TOKEN\", data[tokenKey]);",
+                  "}",
+                  "",
+                  "// Store refresh_token",
+                  "if (typeof data[refreshKey] === 'string' && data[refreshKey].trim().length > 0){",
+                  "    pm.collectionVariables.set(\"JWT_REFRESH_TOKEN\", data[refreshKey])",
+                  "}",
+                  "",
+                  "// Store username (from request)",
+                  "if (typeof req.username === 'string' && req.username.trim().length > 0){",
+                  "    pm.collectionVariables.set(\"USERNAME\", req.username);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
@@ -115,14 +181,97 @@
               }
             },
             "url": {
-              "raw": "{{baseURL}}/api/token/",
+              "raw": "{{baseURL}}/login",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
-                "api",
-                "token",
-                ""
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "req = JSON.parse(pm.request.body.raw)",
+                  "",
+                  "const tokenKey = 'access';",
+                  "const refreshKey = 'refresh';",
+                  "",
+                  "// Store jwt access_token",
+                  "if (typeof data[tokenKey] === \"string\" && data[tokenKey].trim().length > 0) {",
+                  "    pm.collectionVariables.set(\"JWT_TOKEN_2\", data[tokenKey]);",
+                  "}",
+                  "",
+                  "// Store refresh_token",
+                  "if (typeof data[refreshKey] === 'string' && data[refreshKey].trim().length > 0){",
+                  "    pm.collectionVariables.set(\"JWT_REFRESH_TOKEN_2\", data[refreshKey])",
+                  "}",
+                  "",
+                  "// Store username (from request)",
+                  "if (typeof req.username === 'string' && req.username.trim().length > 0){",
+                  "    pm.collectionVariables.set(\"USERNAME_2\", req.username);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"Shane\",\n    \"password\": \"Test123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{$randomFullName}}\",\n    \"password\": \"Test123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/register",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "register"
               ]
             }
           },
@@ -131,345 +280,901 @@
       ]
     },
     {
-      "name": "Login",
-      "event": [
+      "name": "Game (Single Player)",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "data = pm.response.json();",
-              "req = JSON.parse(pm.request.body.raw)",
-              "",
-              "const tokenKey = 'access'",
-              "const refreshKey = 'refresh'",
-              "",
-              "// Store jwt access_token",
-              "if (typeof data[tokenKey] === \"string\" && data[tokenKey].trim().length > 0) {",
-              "    pm.collectionVariables.set(\"JWT_TOKEN\", data[tokenKey]);",
-              "}",
-              "",
-              "// Store refresh_token",
-              "if (typeof data[refreshKey] === 'string' && data[refreshKey].trim().length > 0){",
-              "    pm.collectionVariables.set(\"JWT_REFRESH_TOKEN\", data[refreshKey])",
-              "}",
-              "",
-              "// Store username (from request)",
-              "if (typeof req.username === 'string' && req.username.trim().length > 0){",
-              "    pm.collectionVariables.set(\"USERNAME\", req.username);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"username\": \"Josh\",\n    \"password\": \"Test123\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{baseURL}}/login",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "login"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Register",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    // \"username\": \"{{$randomFullName}}\",\n    \"username\": \"Josh\",\n    \"password\": \"Test123\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{baseURL}}/register",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "register"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "New Game",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "data = pm.response.json();",
-              "",
-              "if (typeof data.game_code === \"string\" && data.game_code.trim().length > 0) {",
-              "    pm.collectionVariables.set(\"GAME_CODE\", data.game_code);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
+          "name": "New Game",
+          "event": [
             {
-              "key": "token",
-              "value": "{{JWT_TOKEN}}",
-              "type": "string"
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.id === \"number\") {",
+                  "    pm.collectionVariables.set(\"GAME_ID\", data.id);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
             }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseURL}}/{{USERNAME}}/play",
-          "host": [
-            "{{baseURL}}"
           ],
-          "path": [
-            "{{USERNAME}}",
-            "play"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "View Game",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{JWT_TOKEN}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseURL}}/{{USERNAME}}/{{GAME_CODE}}",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "{{USERNAME}}",
-            "{{GAME_CODE}}"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Guess Word",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "data = pm.response.json();",
-              "",
-              "if (typeof data.game_code === \"string\" && data.game_code.trim().length > 0) {",
-              "    pm.collectionVariables.set(\"GAME_CODE\", data.game_code);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{JWT_TOKEN}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseURL}}/{{USERNAME}}/{{GAME_CODE}}/neats",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "{{USERNAME}}",
-            "{{GAME_CODE}}",
-            "neats"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Account Stats",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "data = pm.response.json();",
-              "",
-              "if (typeof data.game_code === \"string\" && data.game_code.trim().length > 0) {",
-              "    pm.collectionVariables.set(\"GAME_CODE\", data.game_code);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{JWT_TOKEN}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseURL}}/{{USERNAME}}?limit=10&order=asc",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "{{USERNAME}}"
-          ],
-          "query": [
-            {
-              "key": "offset",
-              "value": "0",
-              "disabled": true
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
             },
-            {
-              "key": "limit",
-              "value": "10"
-            },
-            {
-              "key": "order",
-              "value": "asc"
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/play",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "play"
+              ]
             }
-          ]
+          },
+          "response": []
+        },
+        {
+          "name": "View Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/game/{{GAME_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "game",
+                "{{GAME_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Guess Word",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/game/{{GAME_ID}}/hello",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "game",
+                "{{GAME_ID}}",
+                "hello"
+              ]
+            }
+          },
+          "response": []
         }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "Leaderboards",
-      "event": [
+      "name": "Game Stats",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "data = pm.response.json();",
-              "",
-              "if (typeof data.game_code === \"string\" && data.game_code.trim().length > 0) {",
-              "    pm.collectionVariables.set(\"GAME_CODE\", data.game_code);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{JWT_TOKEN}}",
-              "type": "string"
+          "name": "Account Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/stats?limit=10&order=asc",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "order",
+                  "value": "asc"
+                }
+              ]
             }
-          ]
+          },
+          "response": []
         },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseURL}}/leaderboards",
-          "host": [
-            "{{baseURL}}"
-          ],
-          "path": [
-            "leaderboards"
-          ],
-          "query": [
-            {
-              "key": "offset",
-              "value": "1",
-              "disabled": true
-            },
-            {
-              "key": "limit",
-              "value": "10",
-              "disabled": true
-            },
-            {
-              "key": "order",
-              "value": "asc",
-              "disabled": true
+        {
+          "name": "Leaderboards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/leaderboards",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "leaderboards"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "disabled": true
+                }
+              ]
             }
-          ]
+          },
+          "response": []
         }
-      },
-      "response": []
+      ]
+    },
+    {
+      "name": "Match Making (Multiplayer)",
+      "item": [
+        {
+          "name": "Find Match (Random)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.id === \"number\") {",
+                  "    pm.collectionVariables.set(\"MATCH_ID\", data.id);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/find",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "find"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Find Match (Random)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.id === \"number\") {",
+                  "    pm.collectionVariables.set(\"MATCH_ID\", data.id);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/find",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "find"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Match",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/cancel",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.code === \"string\") {",
+                  "    pm.collectionVariables.set(\"LOBBY_CODE\", data.code);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/create",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Join",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.code === \"string\") {",
+                  "    pm.collectionVariables.set(\"LOBBY_CODE\", data.code);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"{{LOBBY_CODE}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/join",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "join"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Lobby Join",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.code === \"string\") {",
+                  "    pm.collectionVariables.set(\"LOBBY_CODE\", data.code);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"{{LOBBY_CODE}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/join",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "join"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Leave",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/leave",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "leave"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Lobby Leave",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/leave",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "leave"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Current",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/current",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Lobby Current",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/current",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Ready (Toggle)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/ready",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "ready"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Lobby Ready (Toggle)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/ready",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "ready"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lobby Start",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.id === \"number\") {",
+                  "    pm.collectionVariables.set(\"MATCH_ID\", data.id);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/start",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Lobby Start",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "data = pm.response.json();",
+                  "",
+                  "if (typeof data.id === \"number\") {",
+                  "    pm.collectionVariables.set(\"MATCH_ID\", data.id);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/lobby/start",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "lobby",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Match (Multiplayer)",
+      "item": [
+        {
+          "name": "Match State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/{{MATCH_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "{{MATCH_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Match Guess",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"input\": \"hello\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/{{MATCH_ID}}/hellos",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "{{MATCH_ID}}",
+                "hellos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Match State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/{{MATCH_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "{{MATCH_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[2] Match Guess",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN_2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"input\": \"hello\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/matchmaking/match/{{MATCH_ID}}/hello",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "matchmaking",
+                "match",
+                "{{MATCH_ID}}",
+                "hello"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -506,10 +1211,6 @@
       "value": ""
     },
     {
-      "key": "GAME_CODE",
-      "value": ""
-    },
-    {
       "key": "JWT_TOKEN",
       "value": ""
     },
@@ -519,6 +1220,30 @@
     },
     {
       "key": "JWT_REFRESH_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "GAME_ID",
+      "value": ""
+    },
+    {
+      "key": "LOBBY_CODE",
+      "value": ""
+    },
+    {
+      "key": "MATCH_ID",
+      "value": ""
+    },
+    {
+      "key": "JWT_TOKEN_2",
+      "value": ""
+    },
+    {
+      "key": "JWT_REFRESH_TOKEN_2",
+      "value": ""
+    },
+    {
+      "key": "USERNAME_2",
       "value": ""
     }
   ]
