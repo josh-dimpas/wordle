@@ -522,5 +522,7 @@ class MatchCancelView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        Lobby.objects.filter(players=request.user, has_started=True).update(has_started=False)
+
         match.delete()
         return Response({"message": "Match cancelled successfully"})
