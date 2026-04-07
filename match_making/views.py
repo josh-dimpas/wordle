@@ -21,6 +21,7 @@ from .serializers import (
     LobbySerializer,
     MatchSerializer,
 )
+from websocket.services import WebSocketService
 
 config = apps.get_app_config("game")
 
@@ -84,6 +85,15 @@ class LobbyJoinView(APIView):
 
         LobbyMembership.objects.create(lobby=lobby, player=request.user)
 
+        WebSocketService.broadcast_to_lobby(
+            lobby.code,
+            "lobby:player_joined",
+            {
+                "username": request.user.username,
+                "players": lobby.players.values_list("username", flat=True),
+            },
+        )
+
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
 
@@ -99,7 +109,22 @@ class LobbyLeaveView(APIView):
                 {"error": "You are not in any lobby"}, status=status.HTTP_404_NOT_FOUND
             )
 
+        lobby_code = lobby.code
+        new_owner = None
+        if lobby.owner == request.user and lobby.players.count() > 1:
+            new_owner = lobby.players.exclude(id=request.user.id).first()
+
         lobby.remove_player(request.user)
+
+        WebSocketService.broadcast_to_lobby(
+            lobby_code,
+            "lobby:player_left",
+            {
+                "username": request.user.username,
+                "new_owner": new_owner.username if new_owner else None,
+            },
+        )
+
         return Response({"message": "Left lobby successfully"})
 
 
@@ -143,6 +168,12 @@ class LobbyReadyView(APIView):
         if membership:
             membership.is_ready = not membership.is_ready
             membership.save()
+
+            WebSocketService.broadcast_to_lobby(
+                lobby.code,
+                "lobby:ready_toggled",
+                {"username": request.user.username, "is_ready": membership.is_ready},
+            )
 
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
@@ -220,6 +251,10 @@ class LobbyStartView(APIView):
                     is_active=(i == 0),
                     game_id=game.id,
                 )
+
+        WebSocketService.broadcast_to_lobby(
+            lobby.code, "lobby:started", {"match_id": match.id}
+        )
 
         serializer = MatchSerializer(match)
         return Response(serializer.data)
@@ -317,9 +352,12 @@ class MatchGuessView(APIView):
             opponents = MatchPlayer.objects.filter(match=match).exclude(
                 player=request.user
             )
+            opponent_lives_after = {}
             for opponent in opponents:
                 opponent.lives = F("lives") - 1
                 opponent.save()
+                opponent.refresh_from_db()
+                opponent_lives_after[opponent.player_id] = opponent.lives
 
             remaining_players = MatchPlayer.objects.filter(match=match, lives__gt=0)
             if remaining_players.count() == 1:
@@ -338,6 +376,15 @@ class MatchGuessView(APIView):
                     winner_entry.player.wins = F("wins") + 1
                     winner_entry.player.save()
 
+                WebSocketService.broadcast_to_match(
+                    match.id,
+                    "match:completed",
+                    {
+                        "winner_username": match.winner.username,
+                        "winner_id": match.winner.id,
+                    },
+                )
+
             else:
                 match_player.current_word_index = F("current_word_index") + 1
                 match_player.save()
@@ -352,6 +399,27 @@ class MatchGuessView(APIView):
                 if next_game:
                     next_game.is_active = True
                     next_game.save()
+
+                WebSocketService.broadcast_to_match(
+                    match.id,
+                    "game:opponent_word_advanced",
+                    {
+                        "username": request.user.username,
+                        "word_index": match_player.current_word_index,
+                        "lives": match_player.lives,
+                    },
+                )
+
+            WebSocketService.broadcast_to_match(
+                match.id,
+                "game:guess_result",
+                {
+                    "username": request.user.username,
+                    "guess": input_word,
+                    "correct": True,
+                    "opponent_lives": opponent_lives_after,
+                },
+            )
 
             return Response(
                 {
@@ -385,6 +453,15 @@ class MatchGuessView(APIView):
                     if winner_entry:
                         winner_entry.player.wins = F("wins") + 1
                         winner_entry.player.save()
+
+                    WebSocketService.broadcast_to_match(
+                        match.id,
+                        "match:completed",
+                        {
+                            "winner_username": match.winner.username,
+                            "winner_id": match.winner.id,
+                        },
+                    )
                 else:
                     match.status = "completed"
                     match.save()
@@ -392,6 +469,12 @@ class MatchGuessView(APIView):
                     for mp in MatchPlayer.objects.filter(match=match):
                         mp.player.matches_count = F("matches_count") + 1
                         mp.player.save()
+
+                    WebSocketService.broadcast_to_match(
+                        match.id,
+                        "match:completed",
+                        {"winner_username": None, "winner_id": None},
+                    )
             else:
                 match_player.current_word_index = F("current_word_index") + 1
                 match_player.save()
@@ -407,12 +490,43 @@ class MatchGuessView(APIView):
                     next_game.is_active = True
                     next_game.save()
 
+                WebSocketService.broadcast_to_match(
+                    match.id,
+                    "game:opponent_word_advanced",
+                    {
+                        "username": request.user.username,
+                        "word_index": match_player.current_word_index,
+                        "lives": match_player.lives,
+                    },
+                )
+
+            WebSocketService.broadcast_to_match(
+                match.id,
+                "game:guess_result",
+                {
+                    "username": request.user.username,
+                    "guess": input_word,
+                    "correct": False,
+                    "word": game.word,
+                },
+            )
+
             return Response(
                 {
                     "message": f"Ran out of tries. Word was {game.word}.",
                     "game": GameSerializer(game).data,
                 }
             )
+
+        WebSocketService.broadcast_to_match(
+            match.id,
+            "game:guess_result",
+            {
+                "username": request.user.username,
+                "guess": input_word,
+                "correct": False,
+            },
+        )
 
         return Response(GameSerializer(game).data)
 
@@ -480,6 +594,19 @@ class MatchFindView(APIView):
             pending_match.status = "active"
             pending_match.save()
 
+            for player in pending_match.players.all():
+                WebSocketService.send_to_user(
+                    player.id,
+                    "match:opponent_found",
+                    {
+                        "match_id": pending_match.id,
+                        "status": "active",
+                        "players": list(
+                            pending_match.players.values_list("username", flat=True)
+                        ),
+                    },
+                )
+
             serializer = MatchSerializer(pending_match)
             return Response(
                 {**serializer.data, "message": "Match started!"},
@@ -507,7 +634,7 @@ class MatchCancelView(APIView):
     @transaction.atomic
     def post(self, request):
         match = (
-            Match.objects.filter(players=request.user)
+            Match.objects.filter(players=request.user, status="pending")
             .annotate(player_count=Count("players"))
             .filter(player_count=1)
             .first()
@@ -519,7 +646,15 @@ class MatchCancelView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        Lobby.objects.filter(players=request.user, has_started=True).update(has_started=False)
+        Lobby.objects.filter(players=request.user, has_started=True).update(
+            has_started=False
+        )
 
+        match_id = match.id
         match.delete()
+
+        WebSocketService.send_to_user(
+            request.user.id, "match:cancelled", {"match_id": match_id}
+        )
+
         return Response({"message": "Match cancelled successfully"})
