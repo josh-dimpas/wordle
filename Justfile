@@ -58,3 +58,23 @@ redis:
 
 dev:
     just runws
+
+# Add Docker Commands
+dcb:
+    docker compose build
+
+dcb-nocache:
+    docker compose build --no-cache
+
+dcu:
+    docker compose up -d
+
+dcd:
+    docker compose down
+
+dcl:
+    docker compose logs -f
+
+dcmm:
+    docker compose run --rm django-server uv run python manage.py makemigrations
+    docker compose run --rm django-server uv run python manage.py migrate
