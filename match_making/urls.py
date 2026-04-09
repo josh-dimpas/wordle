@@ -12,6 +12,7 @@ urlpatterns = [
     path("match/find", views.MatchFindView.as_view(), name="match_find"),
     path("match/cancel", views.MatchCancelView.as_view(), name="match_cancel"),
     path("match/<int:match_id>", views.MatchStateView.as_view(), name="match_state"),
+    path("match/", views.MatchGetView.as_view(), name="match_get"),
     path(
         "match/<int:match_id>/<str:input>",
         views.MatchGuessView.as_view(),

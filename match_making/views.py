@@ -530,6 +530,22 @@ class MatchGuessView(APIView):
         )
 
         return Response(GameSerializer(game).data)
+class MatchGetView(APIView):
+    permission_classes= [IsAuthenticated]
+    
+    def get(self, request):
+        existing_match = Match.objects.filter(
+            players=request.user, status__in=["pending", "active"]
+        ).first()
+
+        if existing_match:
+            return Response(
+                MatchSerializer(existing_match),
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
 
 
 class MatchFindView(APIView):
