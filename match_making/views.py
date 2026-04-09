@@ -21,6 +21,7 @@ from .serializers import (
     LobbySerializer,
     MatchSerializer,
 )
+from game.utils import config
 from websocket.services import WebSocketService
 
 config = apps.get_app_config("game")
