@@ -14,6 +14,5 @@ dependencies = [
     "djangorestframework>=3.17.1",
     "djangorestframework-simplejwt>=5.5.1",
     "dotenv>=0.9.9",
-    "jwt>=1.4.0",
     "requests>=2.33.1",
 ]
