@@ -7,6 +7,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import Account
+from .events import match
+from .events import typing
 
 
 class WordleConsumer(AsyncWebsocketConsumer):
@@ -21,14 +23,14 @@ class WordleConsumer(AsyncWebsocketConsumer):
         print(token)
 
         if not token:
-            await self.close(code=4001)
+            await self.close(reason="Token not found")
             return
 
         user = await self.get_user_from_token(token)
         self.user = user
 
         if not user:
-            await self.close(code=4001)
+            await self.close(reason="Token invalid")
             return
 
         await self.accept()
@@ -38,44 +40,48 @@ class WordleConsumer(AsyncWebsocketConsumer):
         return await super().disconnect(code)
 
     async def receive(
-        self, text_data: str | None = None, bytes_data: bytes | None = None
+        self, text_data: str | None = "", bytes_data: bytes | None = None
     ) -> None:
+        assert isinstance(text_data, str), "Empty websocket signal data"
+
         text_data = text_data.strip()
-
-        if text_data is None or text_data == "":
-            text_data = "{}"
-
         payload: dict = json.loads(text_data)
 
-        event = payload.get("type")
+        type = payload.get("type")
         data = payload.get("data")
 
-        if event is None:
+        if type is None:
             await self.send({"details": "No event-type passed"})
             return
 
-        # Manually do a switch case
+        # TODO: Find said event using a file-based command mapper
+        # Manually do a switch case for now
+        try:
+            await self.handle(type, data)
+        except Exception:
+            await self.send({"details": "Event type invalid"})
 
-        # TODO: Find said event using the file-based command mapper
-        event_runner = WordleConsumer.events.get(event)
-
-        if event_runner is None:
-            print("NO EVENT RUNNER")
-        else:
-            print("EVENT RUNNER THERE IS")
-
-        return await super().receive(text_data, bytes_data)
-
-    async def send(self, obj: Any):
+    async def send(self, obj: Any):  # type: ignore
         payload = json.dumps(obj)
         await super().send(text_data=payload)
 
     # Utils
     @database_sync_to_async
-    def get_user_from_token(self, token: str):
+    def get_user_from_token(self, token):
         try:
             payload = AccessToken(token)
             user = Account.objects.filter(id=payload["user_id"]).first()
             return user
         except jwt.InvalidTokenError, jwt.ExpiredSignatureError:
             return None
+
+    @database_sync_to_async
+    async def handle(self, type: str, data: Any):
+        match type:
+            case "match:guess":
+                await match.guess(self, data)
+            case "typing:update":
+                await typing.update(self, data)
+
+            case _:
+                raise Exception(f"Event type [{type}] is unimplemented")
