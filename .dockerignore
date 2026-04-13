@@ -36,4 +36,6 @@ staticfiles/
 
 # Docker
 docker-compose.yml
+Dockerfile
+Dockerfile.*
 
