@@ -40,9 +40,11 @@ ALLOWED_HOSTS = [*os.getenv("ALLOWED_HOST", "localhost").split(",")]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "game.apps.GameConfig",
     "match_making.apps.MatchMakingConfig",
     "users.apps.UsersConfig",
+    "websocket.apps.WebsocketConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,7 +52,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "channels",
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
 
 JWT_SECRET_KEY = "wordle-secret-key-2026"
 JWT_ALGORITHM = "HS256"
@@ -154,3 +163,5 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+ASGI_APPLICATION = "wordle.asgi.application"

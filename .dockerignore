@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+db.sqlite3
+db.sqlite3-journal
+
+# Environments & Dependencies
+.env
+.env.local
+.venv
+env/
+venv/
+ENV/
+bin/
+lib/
+include/
+
+# Django-specific
+local_settings.py
+*.log
+media/
+static/
+staticfiles/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+Dockerfile.*
+

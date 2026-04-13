@@ -1,3 +1,5 @@
+set shell := ["powershell.exe", "-c"]
+
 default:
     @just --list
 
@@ -17,7 +19,7 @@ serve:
     uv run python manage.py runserver
 
 runws:
-    uv run daphne -b 0.0.0.0 8000 wordle.asgi:application
+    uv run daphne -b 0.0.0.0 -p 8080 wordle.asgi:application
 
 # Run all tests
 test:
@@ -58,3 +60,29 @@ redis:
 
 dev:
     just runws
+
+# Add Docker Commands
+dcb:
+    docker-compose build --pull
+
+dcb-nocache:
+    docker-compose build --pull --no-cache
+
+dcu:
+    docker-compose up --build --watch
+
+dcd:
+    docker-compose down
+
+dcl:
+    docker-compose logs -f
+
+dcmm:
+    docker-compose run --rm django-server uv run python manage.py makemigrations
+    docker-compose run --rm django-server uv run python manage.py migrate
+
+daphne-log:
+    uv run daphne --access-log - wordle.asgi:application
+
+activate:
+    source .venv/bin/activate

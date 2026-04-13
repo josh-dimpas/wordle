@@ -149,6 +149,7 @@
                   "// Store jwt access_token",
                   "if (typeof data[tokenKey] === \"string\" && data[tokenKey].trim().length > 0) {",
                   "    pm.collectionVariables.set(\"JWT_TOKEN\", data[tokenKey]);",
+                  "    pm.environment.set('WORDLE-JWT-1', data[tokenKey])",
                   "}",
                   "",
                   "// Store refresh_token",
@@ -208,6 +209,7 @@
                   "// Store jwt access_token",
                   "if (typeof data[tokenKey] === \"string\" && data[tokenKey].trim().length > 0) {",
                   "    pm.collectionVariables.set(\"JWT_TOKEN_2\", data[tokenKey]);",
+                  "    pm.environment.set('WORDLE-JWT-2', data[tokenKey])",
                   "}",
                   "",
                   "// Store refresh_token",
@@ -258,7 +260,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"{{$randomFullName}}\",\n    \"password\": \"Test123\"\n}",
+              "raw": "{\n    //\"username\": \"{{$randomFullName}}\",\n    //\"username\": \"Josh\",\n    \"username\": \"Shane\",\n    \"password\": \"Test123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -384,14 +386,14 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseURL}}/game/{{GAME_ID}}/hello",
+              "raw": "{{baseURL}}/game/{{GAME_ID}}/ellos",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
                 "game",
                 "{{GAME_ID}}",
-                "hello"
+                "ellos"
               ]
             }
           },
@@ -556,7 +558,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{JWT_TOKEN}}",
+                  "value": "{{JWT_TOKEN_2}}",
                   "type": "string"
                 }
               ]
