@@ -14,3 +14,6 @@ class TypeUpdatePayload(TypedDict):
 
 async def update(stub: WordleConsumer, data: Any):
     payload: TypeUpdatePayload = data
+
+    # Do nothing for now (linter disapproves)
+    stub.send({"message": f"Successfully updated {payload['word']}"})

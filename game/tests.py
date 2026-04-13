@@ -1,5 +1,4 @@
 from django.test import TestCase
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -119,10 +118,11 @@ class GameSerializerTests(TestCase):
 
 class LeaderboardSerializerTests(TestCase):
     def test_serializer_fields(self):
-        data = {"username": "testuser", "wins": 5, "matches_count": 10}
+        data = {"id": 1, "username": "testuser", "wins": 5, "matches_count": 10}
         serializer = LeaderboardSerializer(data)
         result = serializer.data
 
+        self.assertEqual(result["id"], 1)
         self.assertEqual(result["username"], "testuser")
         self.assertEqual(result["wins"], 5)
         self.assertEqual(result["matches_count"], 10)

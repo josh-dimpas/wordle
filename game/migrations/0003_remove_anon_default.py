@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('game', '0002_remove_code_field'),
+        ("game", "0002_remove_code_field"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='game',
-            name='player',
+            model_name="game",
+            name="player",
             field=models.CharField(),
         ),
     ]
