@@ -75,7 +75,6 @@ class WordleConsumer(AsyncWebsocketConsumer):
         except jwt.InvalidTokenError, jwt.ExpiredSignatureError:
             return None
 
-    @database_sync_to_async
     async def handle(self, type: str, data: Any):
         match type:
             case "match:guess":
