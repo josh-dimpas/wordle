@@ -1,5 +1,10 @@
 # Just a plain event, not emitted by the user
-from websocket.consumers import WordleConsumer
+from __future__ import annotations
+
+from typing import Any, TypedDict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from websocket.consumers import WordleConsumer
 
 
 async def event(stub: WordleConsumer):

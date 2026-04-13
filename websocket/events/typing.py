@@ -1,6 +1,9 @@
-from typing import Any, TypedDict
+from __future__ import annotations
 
-from websocket.consumers import WordleConsumer
+from typing import Any, TypedDict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from websocket.consumers import WordleConsumer
 
 
 class TypeUpdatePayload(TypedDict):

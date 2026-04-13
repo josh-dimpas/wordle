@@ -1,6 +1,8 @@
-from typing import Any, TypedDict
+from __future__ import annotations
+from typing import Any, TypedDict, TYPE_CHECKING
 
-from websocket.consumers import WordleConsumer
+if TYPE_CHECKING:
+    from websocket.consumers import WordleConsumer
 
 
 class GuessEventPayload(TypedDict):
