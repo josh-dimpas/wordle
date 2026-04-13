@@ -1,6 +1,5 @@
 from django.apps import apps
 
-from django.apps import apps
 from .apps import UsersConfig
 
-config: UsersConfig = apps.get_app_config('users') # type: ignore
+config: UsersConfig = apps.get_app_config("users")  # type: ignore

@@ -9,47 +9,102 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('match_making', '0001_initial'),
+        ("match_making", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='match',
-            name='lives_per_player',
+            model_name="match",
+            name="lives_per_player",
             field=models.IntegerField(default=3),
         ),
         migrations.AddField(
-            model_name='match',
-            name='winner',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='won_matches', to=settings.AUTH_USER_MODEL),
+            model_name="match",
+            name="winner",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="won_matches",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.CreateModel(
-            name='MatchGame',
+            name="MatchGame",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('word_index', models.IntegerField()),
-                ('is_active', models.BooleanField(default=False)),
-                ('game_id', models.IntegerField()),
-                ('match', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='match_games', to='match_making.match')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='match_games', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("word_index", models.IntegerField()),
+                ("is_active", models.BooleanField(default=False)),
+                ("game_id", models.IntegerField()),
+                (
+                    "match",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="match_games",
+                        to="match_making.match",
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="match_games",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('match', 'player', 'word_index')},
+                "unique_together": {("match", "player", "word_index")},
             },
         ),
         migrations.CreateModel(
-            name='MatchPlayer',
+            name="MatchPlayer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('lives', models.IntegerField(default=3)),
-                ('current_word_index', models.IntegerField(default=0)),
-                ('joined_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Joined At')),
-                ('match', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='match_players', to='match_making.match')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='match_entries', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("lives", models.IntegerField(default=3)),
+                ("current_word_index", models.IntegerField(default=0)),
+                (
+                    "joined_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Joined At"
+                    ),
+                ),
+                (
+                    "match",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="match_players",
+                        to="match_making.match",
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="match_entries",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('match', 'player')},
+                "unique_together": {("match", "player")},
             },
         ),
     ]
