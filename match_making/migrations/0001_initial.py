@@ -16,41 +16,130 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Lobby',
+            name="Lobby",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=9, unique=True)),
-                ('has_started', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Created At')),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='owned_lobbies', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("code", models.CharField(max_length=9, unique=True)),
+                ("has_started", models.BooleanField(default=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Created At"
+                    ),
+                ),
+                (
+                    "owner",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="owned_lobbies",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='LobbyMembership',
+            name="LobbyMembership",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_ready', models.BooleanField(default=False)),
-                ('joined_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Joined At')),
-                ('lobby', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to='match_making.lobby')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lobby_memberships', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("is_ready", models.BooleanField(default=False)),
+                (
+                    "joined_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Joined At"
+                    ),
+                ),
+                (
+                    "lobby",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="memberships",
+                        to="match_making.lobby",
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lobby_memberships",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('lobby', 'player')},
+                "unique_together": {("lobby", "player")},
             },
         ),
         migrations.AddField(
-            model_name='lobby',
-            name='players',
-            field=models.ManyToManyField(related_name='lobbies', through='match_making.LobbyMembership', to=settings.AUTH_USER_MODEL),
+            model_name="lobby",
+            name="players",
+            field=models.ManyToManyField(
+                related_name="lobbies",
+                through="match_making.LobbyMembership",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.CreateModel(
-            name='Match',
+            name="Match",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('active', 'Active'), ('completed', 'Completed')], default='pending', max_length=20)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Created At')),
-                ('lobby', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='matches', to='match_making.lobby')),
-                ('players', models.ManyToManyField(related_name='matches', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("active", "Active"),
+                            ("completed", "Completed"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Created At"
+                    ),
+                ),
+                (
+                    "lobby",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="matches",
+                        to="match_making.lobby",
+                    ),
+                ),
+                (
+                    "players",
+                    models.ManyToManyField(
+                        related_name="matches", to=settings.AUTH_USER_MODEL
+                    ),
+                ),
             ],
         ),
     ]

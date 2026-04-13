@@ -8,21 +8,33 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Game',
+            name="Game",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(default='', max_length=6)),
-                ('is_win', models.BooleanField(default=False)),
-                ('player', models.CharField(default='anon')),
-                ('word', models.CharField(max_length=5)),
-                ('tries', models.JSONField(default=list)),
-                ('max_tries', models.IntegerField(default=6)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Created At')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("code", models.CharField(default="", max_length=6)),
+                ("is_win", models.BooleanField(default=False)),
+                ("player", models.CharField(default="anon")),
+                ("word", models.CharField(max_length=5)),
+                ("tries", models.JSONField(default=list)),
+                ("max_tries", models.IntegerField(default=6)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="Created At"
+                    ),
+                ),
             ],
         ),
     ]

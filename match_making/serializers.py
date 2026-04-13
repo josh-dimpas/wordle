@@ -67,7 +67,7 @@ class MatchGameSerializer(serializers.Serializer):
 
 
 class MatchPlayerSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='player.id', read_only=True)
+    id = serializers.IntegerField(source="player.id", read_only=True)
     username = serializers.CharField(source="player.username", read_only=True)
     current_game = serializers.SerializerMethodField()
 

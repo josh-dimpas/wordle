@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class MatchMakingConfig(AppConfig):
-    name = 'match_making'
+    name = "match_making"

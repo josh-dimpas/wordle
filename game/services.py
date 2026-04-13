@@ -9,10 +9,108 @@ REQUEST_TIMEOUT: Final = 30
 
 
 class WordService:
-    FALLBACK_WORDS = [ "small", "class", "space", "built", "award", "fiber", "forth", "layer", "state", "basis", "sized", "stuck", "flash", "faith", "alone", "album", "argue", "error", "might", "valid", "civil", "logic", "forum", "arise", "prove", "night", "still", "later", "drive", "noise", "blind", "taxes", "newly", "stage", "match", "shirt", "today", "hotel", "needs", "quick", "chief", "harry", "anger", "hence", "fresh", "lower", "laser", "slide", "mouth", "group", "strip", "ratio", "drink", "billy", "frame", "alike", "drama", "input", "clean", "value", "badly", "japan", "crime", "crash", "henry", "stand", "happy", "watch", "great", "worst", "alert", "adopt", "power", "there", "smith", "chain", "refer", "craft", "shelf", "elite", "cream", "their", "buyer", "think", "apply", "along", "chase", "brand", "sound", "place", "world", "sorry", "point", "angry", "trade", "noted", "local", "steel", "drawn", "cheap",
+    FALLBACK_WORDS = [
+        "small",
+        "class",
+        "space",
+        "built",
+        "award",
+        "fiber",
+        "forth",
+        "layer",
+        "state",
+        "basis",
+        "sized",
+        "stuck",
+        "flash",
+        "faith",
+        "alone",
+        "album",
+        "argue",
+        "error",
+        "might",
+        "valid",
+        "civil",
+        "logic",
+        "forum",
+        "arise",
+        "prove",
+        "night",
+        "still",
+        "later",
+        "drive",
+        "noise",
+        "blind",
+        "taxes",
+        "newly",
+        "stage",
+        "match",
+        "shirt",
+        "today",
+        "hotel",
+        "needs",
+        "quick",
+        "chief",
+        "harry",
+        "anger",
+        "hence",
+        "fresh",
+        "lower",
+        "laser",
+        "slide",
+        "mouth",
+        "group",
+        "strip",
+        "ratio",
+        "drink",
+        "billy",
+        "frame",
+        "alike",
+        "drama",
+        "input",
+        "clean",
+        "value",
+        "badly",
+        "japan",
+        "crime",
+        "crash",
+        "henry",
+        "stand",
+        "happy",
+        "watch",
+        "great",
+        "worst",
+        "alert",
+        "adopt",
+        "power",
+        "there",
+        "smith",
+        "chain",
+        "refer",
+        "craft",
+        "shelf",
+        "elite",
+        "cream",
+        "their",
+        "buyer",
+        "think",
+        "apply",
+        "along",
+        "chase",
+        "brand",
+        "sound",
+        "place",
+        "world",
+        "sorry",
+        "point",
+        "angry",
+        "trade",
+        "noted",
+        "local",
+        "steel",
+        "drawn",
+        "cheap",
     ]
-
-
 
     @classmethod
     def fetch_word(cls) -> str:
@@ -49,7 +147,7 @@ class WordService:
         try:
             return cls.fetch_word()
         except requests.exceptions.Timeout:
-            print(f"Timeout fetching word, using fallback")
+            print("Timeout fetching word, using fallback")
             return random.choice(cls.FALLBACK_WORDS)
         except BaseException as e:
             print(f"Error on fetching word: {e}")
@@ -60,7 +158,7 @@ class WordService:
         try:
             return cls.fetch_words(amount=amount)
         except requests.exceptions.Timeout:
-            print(f"Timeout fetching words, using fallback")
+            print("Timeout fetching words, using fallback")
             return random.choices(cls.FALLBACK_WORDS, k=amount)
         except BaseException as e:
             print(f"Error on fetching words: {e}")

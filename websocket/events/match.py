@@ -13,3 +13,6 @@ class GuessEventPayload(TypedDict):
 
 async def guess(stub: WordleConsumer, data: Any):
     payload: GuessEventPayload = data
+
+    # Do nothing for now (linter disapproves)
+    stub.send({"message": f"Successfully added {payload['word']}"})

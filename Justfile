@@ -1,5 +1,3 @@
-set shell := ["powershell.exe", "-c"]
-
 default:
     @just --list
 
@@ -35,6 +33,9 @@ test-app-verbose app:
 
 lint:
     uv run ruff check .
+
+lint-fix:
+    uv run ruff check . --fix
 
 format:
     uv run black .

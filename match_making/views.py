@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 from game.models import Game
 from game.services import WordService
 from game.serializers import GameSerializer
-from django.apps import apps
 
 from .models import Lobby, LobbyMembership, Match, MatchPlayer, MatchGame
 from .serializers import (
@@ -25,6 +24,7 @@ from game.utils import config
 from websocket.services import WebSocketService
 from .utils import complete_match, advance_word, broadcast_guess_result
 
+
 def generate_lobby_code():
     while True:
         letters = "".join(random.choices(string.ascii_lowercase, k=4))
@@ -32,6 +32,7 @@ def generate_lobby_code():
         code = f"{letters}-{numbers}"
         if not Lobby.objects.filter(code=code).exists():
             return code
+
 
 class LobbyCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -47,6 +48,7 @@ class LobbyCreateView(APIView):
 
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class LobbyJoinView(APIView):
     permission_classes = [IsAuthenticated]
@@ -94,6 +96,7 @@ class LobbyJoinView(APIView):
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
 
+
 class LobbyLeaveView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -123,6 +126,7 @@ class LobbyLeaveView(APIView):
 
         return Response({"message": "Left lobby successfully"})
 
+
 class LobbyCurrentView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -140,6 +144,7 @@ class LobbyCurrentView(APIView):
 
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
+
 
 class LobbyReadyView(APIView):
     permission_classes = [IsAuthenticated]
@@ -171,6 +176,7 @@ class LobbyReadyView(APIView):
 
         serializer = LobbySerializer(lobby, context={"request": request})
         return Response(serializer.data)
+
 
 class LobbyStartView(APIView):
     permission_classes = [IsAuthenticated]
@@ -252,6 +258,7 @@ class LobbyStartView(APIView):
         serializer = MatchSerializer(match)
         return Response(serializer.data)
 
+
 class MatchStateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -270,6 +277,7 @@ class MatchStateView(APIView):
 
         serializer = MatchSerializer(match)
         return Response(serializer.data)
+
 
 class MatchGuessView(APIView):
     permission_classes = [IsAuthenticated]
@@ -436,22 +444,19 @@ class MatchGuessView(APIView):
             }
         )
 
+
 class MatchGetView(APIView):
-    permission_classes= [IsAuthenticated]
-    
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         existing_match = Match.objects.filter(
             players=request.user, status__in=["pending", "active"]
         ).first()
 
         if existing_match:
-            return Response(
-                MatchSerializer(existing_match),
-                status=status.HTTP_200_OK
-            )
+            return Response(MatchSerializer(existing_match), status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
 
 
 class MatchFindView(APIView):
@@ -464,7 +469,10 @@ class MatchFindView(APIView):
         ).first()
         if existing_match:
             return Response(
-                {"error": "You are already in a match", "match": MatchSerializer(existing_match).data},
+                {
+                    "error": "You are already in a match",
+                    "match": MatchSerializer(existing_match).data,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -550,15 +558,15 @@ class MatchFindView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 class MatchCancelView(APIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
-        match = (
-            Match.objects.filter(players=request.user, status__in=["pending", "active"])
-            .first()
-        )
+        match = Match.objects.filter(
+            players=request.user, status__in=["pending", "active"]
+        ).first()
 
         if not match:
             return Response(

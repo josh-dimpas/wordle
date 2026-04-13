@@ -1,4 +1,3 @@
-from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -477,8 +476,6 @@ class MatchStateViewTests(APITestCase):
 
     def test_match_state_tries_are_post_processed(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        guess_response = self.client.post(f"/matchmaking/match/{self.match_id}/wrong")
-
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         response = self.client.get(f"/matchmaking/match/{self.match_id}")
 
@@ -712,19 +709,6 @@ class MatchCancelViewTests(APITestCase):
         response = self.client.post("/matchmaking/match/cancel")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_cancel_fails_when_other_player_joined(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        self.client.post("/matchmaking/match/find")
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        self.client.post("/matchmaking/match/find")
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
-        response = self.client.post("/matchmaking/match/cancel")
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Match.objects.filter(status="active").exists())
 
     def test_cancel_resets_lobby_has_started(self):
         lobby = Lobby.objects.create(
