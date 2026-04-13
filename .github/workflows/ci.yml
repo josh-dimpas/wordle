@@ -67,35 +67,35 @@ jobs:
       - name: Run mypy type checker
         run: uv run mypy .
 
-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  test:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.14"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        - name: Install uv
+          uses: astral-sh/setup-uv@v4
 
-      - name: Install dependencies
-        run: uv sync
+        - name: Install dependencies
+          run: uv sync
 
-      - name: Run database migrations
-        env:
-          SECRET_KEY: "test-secret-key-for-ci-only"
-          DEBUG: "False"
-          ALLOWED_HOSTS: "localhost,127.0.0.1"
-          DB_URL: "sqlite:///db.sqlite3"
-        run: uv run python manage.py migrate
+        - name: Run database migrations
+          env:
+            SECRET_KEY: "test-secret-key-for-ci-only"
+            DEBUG: "False"
+            ALLOWED_HOSTS: "localhost,127.0.0.1"
+            DB_URL: "sqlite:///db.sqlite3"
+          run: uv run python manage.py migrate
 
-      - name: Run Django tests
-        env:
-          SECRET_KEY: "test-secret-key-for-ci-only"
-          DEBUG: "False"
-          ALLOWED_HOSTS: "localhost,127.0.0.1"
-          DB_URL: "sqlite:///db.sqlite3"
-        run: uv run python manage.py test
+        - name: Run Django tests
+          env:
+            SECRET_KEY: "test-secret-key-for-ci-only"
+            DEBUG: "False"
+            ALLOWED_HOSTS: "localhost,127.0.0.1"
+            DB_URL: "sqlite:///db.sqlite3"
+          run: uv run python manage.py test
